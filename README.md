@@ -1,87 +1,141 @@
-Sobre o Projeto
+# 🚚 Sistema Inteligente de Kanban para Gerenciamento Logístico
 
-Este projeto foi desenvolvido como trabalho acadêmico da N3 da disciplina Projeto Aplicado de Curso (PAC), com o objetivo de propor uma solução tecnológica para otimizar operações logísticas por meio da metodologia Kanban integrada a recursos de inteligência operacional.
+> Projeto acadêmico desenvolvido para a disciplina **Projeto Aplicado de Curso (PAC) - N3**, com foco na otimização de operações logísticas através da metodologia Kanban integrada a recursos de inteligência operacional.
 
-A proposta foi elaborada para atender às necessidades da empresa Transmas Encomendas e Transportes LTDA, buscando melhorar o controle de coletas, gerenciamento de veículos, comunicação operacional e tomada de decisões.
+---
 
-Problema
+## 📋 Sobre o Projeto
 
-Muitas empresas do setor logístico ainda utilizam planilhas e processos manuais para controlar suas operações. Essa realidade pode gerar:
+O setor logístico enfrenta desafios relacionados à organização de processos, controle de coletas, gerenciamento de veículos e comunicação entre equipes. Muitas empresas ainda utilizam planilhas e métodos manuais, o que pode causar atrasos, falhas operacionais e baixa produtividade.
 
-Atrasos nas coletas e entregas;
-Falhas de comunicação entre equipes;
-Perda de informações;
-Baixa produtividade operacional;
-Dificuldade na tomada de decisões.
-Objetivo
+Este projeto propõe o desenvolvimento de um sistema inteligente capaz de centralizar informações logísticas, melhorar o acompanhamento das operações e auxiliar na tomada de decisões através de automações e recursos inteligentes.
 
-Desenvolver um sistema inteligente baseado em Kanban para centralizar informações logísticas e oferecer recursos que auxiliem no gerenciamento eficiente das operações.
+---
 
-Funcionalidades Propostas
-Gestão Operacional
-Cadastro de coletas;
-Gerenciamento de veículos e motoristas;
-Quadro Kanban para acompanhamento das atividades;
-Comunicação entre usuários.
-Otimização Logística
-Cálculo de rotas eficientes;
-Agrupamento automático de coletas por região;
-Priorização automática de tarefas;
-Previsão de atrasos;
-Detecção de gargalos operacionais.
-Monitoramento
-Alertas automáticos;
-Notificações baseadas em eventos;
-Rastreamento em tempo real.
-Relatórios e Métricas
-Tempo médio por etapa;
-Taxa de atrasos;
-Produtividade por veículo e motorista;
-Relatórios gerenciais.
-Inteligência Operacional
-Sugestão automática de veículo ideal para coleta;
-Identificação de fluxos acima do tempo esperado;
-Apoio à tomada de decisão logística.
-Tecnologias Propostas
-Frontend: React ou Flutter
-Backend: Node.js ou Python
-Banco de Dados: PostgreSQL
-APIs: Google Maps API ou OpenRouteService
-Arquitetura
+## 🎯 Objetivos
 
-O sistema segue uma arquitetura cliente-servidor dividida em três camadas:
+### Objetivo Geral
 
-Camada de Apresentação
+Desenvolver um sistema inteligente de gerenciamento logístico utilizando a metodologia Kanban para melhorar o controle operacional da empresa Transmas Encomendas e Transportes LTDA.
 
-Responsável pela interface web e mobile.
+### Objetivos Específicos
 
-Camada de Negócio
+* ✅ Cadastro de coletas
+* ✅ Gerenciamento de veículos e motoristas
+* ✅ Quadro Kanban para acompanhamento das atividades
+* ✅ Otimização de rotas
+* ✅ Agrupamento de coletas por região
+* ✅ Alertas automáticos
+* ✅ Relatórios analíticos
+* ✅ Monitoramento em tempo real
+* ✅ Priorização automática de tarefas
 
-Responsável pelas regras de negócio, cálculos de rotas, alertas e inteligência operacional.
+---
 
-Camada de Dados
+## ⚙️ Funcionalidades
 
-Responsável pelo armazenamento de usuários, veículos, coletas, rotas e indicadores operacionais.
+### 📦 Gestão Operacional
 
-Diferenciais
+* Cadastro de coletas
+* Controle de veículos
+* Controle de motoristas
+* Comunicação entre usuários
+* Quadro Kanban
 
-O principal diferencial da proposta é a integração entre gerenciamento visual baseado em Kanban e recursos inteligentes de apoio à decisão, incluindo:
+### 🗺️ Otimização Logística
 
-Agrupamento automático de coletas;
-Priorização inteligente;
-Detecção de gargalos;
-Previsão de atrasos;
-Recomendação de veículos;
-Monitoramento em tempo real.
-Resultados Esperados
-Redução de atrasos operacionais;
-Aumento da produtividade;
-Melhor aproveitamento da frota;
-Redução de erros manuais;
-Melhor comunicação entre equipes;
-Maior eficiência na tomada de decisões.
-Autor
+* Cálculo de rotas eficientes
+* Agrupamento automático por região
+* Previsão de atrasos
+* Detecção de gargalos
 
-Matheus Lorenzetti
+### 📊 Relatórios e Indicadores
 
-Projeto desenvolvido para a disciplina Projeto Aplicado de Curso (PAC) – Católica SC.
+* Tempo médio por etapa
+* Taxa de atrasos
+* Produtividade por veículo
+* Relatórios gerenciais
+
+### 🤖 Inteligência Operacional
+
+* Sugestão automática de priorização
+* Recomendação de veículo ideal
+* Identificação de fluxos acima do tempo esperado
+* Apoio à tomada de decisão
+
+---
+
+## 🏗️ Arquitetura
+
+O sistema segue uma arquitetura em três camadas:
+
+```text
+Apresentação
+      ↓
+Regras de Negócio
+      ↓
+Banco de Dados
+```
+
+### Camada de Apresentação
+
+Interface web/mobile para interação dos usuários.
+
+### Camada de Negócio
+
+Processamento das regras logísticas, automações e inteligência operacional.
+
+### Camada de Dados
+
+Armazenamento de usuários, veículos, coletas, rotas e indicadores.
+
+---
+
+## 💻 Tecnologias Propostas
+
+| Camada         | Tecnologia                         |
+| -------------- | ---------------------------------- |
+| Frontend       | React ou Flutter                   |
+| Backend        | Node.js ou Python                  |
+| Banco de Dados | PostgreSQL                         |
+| APIs           | Google Maps API / OpenRouteService |
+
+---
+
+## 🚀 Diferenciais
+
+O projeto busca unir recursos que normalmente são encontrados separadamente em diferentes sistemas:
+
+* Kanban para gestão visual
+* Otimização inteligente de rotas
+* Detecção automática de gargalos
+* Monitoramento em tempo real
+* Alertas automáticos
+* Apoio inteligente à tomada de decisão
+
+---
+
+## 📈 Resultados Esperados
+
+* Redução de atrasos operacionais
+* Melhoria da comunicação entre equipes
+* Aumento da produtividade
+* Melhor aproveitamento da frota
+* Maior controle das coletas
+* Redução de erros manuais
+* Tomada de decisão mais eficiente
+
+---
+
+## 🎓 Informações Acadêmicas
+
+**Disciplina:** Projeto Aplicado de Curso (PAC)
+**Instituição:** Católica SC
+**Autor:** Matheus Lorenzetti
+**Ano:** 2026
+
+---
+
+## 📄 Licença
+
+Projeto desenvolvido exclusivamente para fins acadêmicos.
