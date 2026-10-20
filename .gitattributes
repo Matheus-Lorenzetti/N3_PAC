@@ -1,0 +1,11 @@
+# Normaliza fim de linha (evita o aviso "LF will be replaced by CRLF" no Windows)
+* text=auto eol=lf
+
+# Scripts do Windows continuam com CRLF
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+
+# Binários
+*.png binary
+*.jpg binary
+*.pdf binary
