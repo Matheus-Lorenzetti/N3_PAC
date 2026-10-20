@@ -1,82 +1,95 @@
 # 🛠️ Como configurar o projeto em outro computador
 
-Passo a passo para deixar o ambiente igual ao original.
+Tudo pelo terminal. Use o **PowerShell** (Windows).
 
 ---
 
-## 1. Programas para instalar
+## 1. Programas
 
-| Programa | Onde baixar | Observação |
-| --- | --- | --- |
-| **Git** | https://git-scm.com/downloads | Instalação padrão (next, next...) |
-| **Node.js** (versão LTS) | https://nodejs.org | Já vem com o `npm` e o `npx` |
-| **VS Code** | https://code.visualstudio.com | Editor |
-| **Claude Code** (extensão do VS Code) | Aba de extensões do VS Code → buscar "Claude Code" | Fazer login com a conta Claude |
-
-Para conferir se instalou certo, abra um terminal e rode:
-
+```powershell
+winget install Git.Git OpenJS.NodeJS.LTS Microsoft.VisualStudioCode
 ```
-git --version
-node --version
+
+⚠️ **Feche e abra o terminal de novo** depois disso (para os comandos `git`, `node` e `code` funcionarem).
+
+Instalar o Claude Code no terminal (necessário para os plugins):
+
+```powershell
+npm install -g @anthropic-ai/claude-code
 ```
 
 ---
 
 ## 2. Baixar o projeto
 
-```
+```powershell
 git clone https://github.com/Matheus-Lorenzetti/N3_PAC.git
 cd N3_PAC
 npm install
 ```
 
-Na primeira vez que fizer `git push`, o navegador vai abrir pedindo login no GitHub. É só autorizar.
+Na primeira vez que fizer `git push`, o navegador abre pedindo login no GitHub. É só autorizar.
 
 ---
 
-## 3. Skills do Claude Code
+## 3. Extensões do VS Code
 
-✅ **Não precisa fazer nada.** As skills já vêm junto no repositório, na pasta `.claude/skills/`.
+Copie e cole tudo de uma vez:
 
-Se alguma sumir, para reinstalar todas:
-
+```powershell
+code --install-extension anthropic.claude-code
+code --install-extension bradlc.vscode-tailwindcss
+code --install-extension dbaeumer.vscode-eslint
+code --install-extension eamodio.gitlens
+code --install-extension mtxr.sqltools
+code --install-extension pomdtr.excalidraw-editor
+code --install-extension rangav.vscode-thunder-client
+code --install-extension rvest.vs-code-prettier-eslint
+code --install-extension sinclair.react-developer-tools
+code --install-extension supabase.vscode-supabase-extension
+code --install-extension upstash.context7-mcp
+code --install-extension usernamehw.errorlens
+code --install-extension vijaynirmal.playwright-mcp-relay
+code --install-extension willasm.obsidian-md-vsc
+code --install-extension yoavbls.pretty-ts-errors
 ```
-npx skills experimental_install
-```
+
+> Alternativa: ao abrir a pasta no VS Code, ele mostra um aviso **"Instalar extensões recomendadas"** (lista em `.vscode/extensions.json`). É só clicar.
 
 ---
 
-## 4. MCP do shadcn
+## 4. Plugins do Claude Code (Caveman e Obsidian)
 
-✅ Já está configurado no arquivo `.mcp.json`.
+Os plugins **não vão junto com o git**. Instale pelo terminal, dentro da pasta do projeto:
 
-Ao abrir o Claude Code no projeto pela primeira vez, ele pergunta se pode usar o servidor **shadcn** → clique em **aceitar**.
-Para conferir, digite `/mcp` no chat do Claude Code.
+```powershell
+claude plugin marketplace add JuliusBrussee/caveman
+claude plugin install caveman@caveman --scope project
+
+claude plugin marketplace add kepano/obsidian-skills
+claude plugin install obsidian@obsidian-skills --scope project
+```
+
+> Se der erro, faça pelo chat do Claude Code: `/plugin marketplace add JuliusBrussee/caveman` e `/plugin install caveman@caveman` (mesma coisa para o Obsidian).
+
+O **Caveman** começa desligado (configurado no `.caveman.json`). Para ligar, use `/caveman` no chat.
 
 ---
 
-## 5. Plugins (precisa instalar manualmente)
+## 5. Skills e MCP
 
-Os plugins **não vão junto com o git**, então em cada computador novo é preciso instalar. Digite no chat do Claude Code:
+✅ **Não precisa fazer nada.**
 
-```
-/plugin marketplace add JuliusBrussee/caveman
-/plugin install caveman@caveman
-
-/plugin marketplace add kepano/obsidian-skills
-/plugin install obsidian@obsidian-skills
-```
-
-Se perguntar o escopo, escolha **Project**.
-Se o `/plugin` não funcionar na extensão, abra o terminal, digite `claude` e rode os comandos lá.
-
-> O **Caveman** começa desligado (configurado no `.caveman.json`). Para ligar, use `/caveman`.
+- **Skills**: já vêm no repositório (`.claude/skills/`). Se alguma sumir: `npx skills experimental_install`
+- **MCP do shadcn**: já configurado no `.mcp.json`. Ao abrir o Claude Code a primeira vez, ele pergunta se pode usar o servidor **shadcn** → **aceitar**. Para conferir: `/mcp` no chat.
 
 ---
 
 ## ✅ Checklist rápido
 
-- [ ] Git, Node.js, VS Code e Claude Code instalados
+- [ ] `winget install ...` e reabrir o terminal
+- [ ] `npm install -g @anthropic-ai/claude-code`
 - [ ] `git clone` + `npm install`
+- [ ] Extensões do VS Code
+- [ ] Plugins Caveman e Obsidian
 - [ ] Aceitar o MCP do shadcn
-- [ ] Instalar os plugins Caveman e Obsidian

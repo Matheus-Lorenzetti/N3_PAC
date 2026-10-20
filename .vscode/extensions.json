@@ -1,0 +1,19 @@
+{
+  "recommendations": [
+    "anthropic.claude-code",
+    "bradlc.vscode-tailwindcss",
+    "dbaeumer.vscode-eslint",
+    "eamodio.gitlens",
+    "mtxr.sqltools",
+    "pomdtr.excalidraw-editor",
+    "rangav.vscode-thunder-client",
+    "rvest.vs-code-prettier-eslint",
+    "sinclair.react-developer-tools",
+    "supabase.vscode-supabase-extension",
+    "upstash.context7-mcp",
+    "usernamehw.errorlens",
+    "vijaynirmal.playwright-mcp-relay",
+    "willasm.obsidian-md-vsc",
+    "yoavbls.pretty-ts-errors"
+  ]
+}
