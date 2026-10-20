@@ -7,8 +7,10 @@ Tudo pelo terminal. Use o **PowerShell** (Windows).
 ## 1. Programas
 
 ```powershell
-winget install Git.Git OpenJS.NodeJS.LTS Microsoft.VisualStudioCode
+winget install Git.Git OpenJS.NodeJS.LTS Microsoft.VisualStudioCode Docker.DockerDesktop
 ```
+
+> O Docker Desktop precisa do WSL2 e da virtualização ligada na BIOS. Ele roda o banco de dados local (passo 6).
 
 ⚠️ **Feche e abra o terminal de novo** depois disso (para os comandos `git`, `node` e `code` funcionarem).
 
@@ -85,6 +87,23 @@ O **Caveman** começa desligado (configurado no `.caveman.json`). Para ligar, us
 
 ---
 
+## 6. Banco de dados local (Supabase)
+
+O banco roda **no seu computador**, sem criar conta no Supabase. Antes, abra o **Docker Desktop** e espere ele ficar pronto.
+
+```powershell
+npm run db:start    # sobe o banco (a 1ª vez baixa as imagens e demora)
+npm run db:reset    # recria o banco do zero: aplica supabase/migrations + supabase/seed.sql
+npm run db:status   # mostra as URLs e as chaves locais
+npm run db:stop     # desliga
+```
+
+- **Studio** (painel visual do banco): http://localhost:54323
+- **API**: http://localhost:54321
+- **Postgres direto** (SQLTools, DBeaver etc.): `postgresql://postgres:postgres@localhost:54322/postgres`
+
+---
+
 ## ✅ Checklist rápido
 
 - [ ] `winget install ...` e reabrir o terminal
@@ -93,3 +112,4 @@ O **Caveman** começa desligado (configurado no `.caveman.json`). Para ligar, us
 - [ ] Extensões do VS Code
 - [ ] Plugins Caveman e Obsidian
 - [ ] Aceitar o MCP do shadcn
+- [ ] Abrir o Docker Desktop e rodar `npm run db:start`

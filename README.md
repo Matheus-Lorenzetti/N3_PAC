@@ -91,14 +91,56 @@ Armazenamento de usuários, veículos, coletas, rotas e indicadores.
 
 ---
 
-## 💻 Tecnologias Propostas
+## 💻 Tecnologias
 
-| Camada         | Tecnologia                         |
-| -------------- | ---------------------------------- |
-| Frontend       | React ou Flutter                   |
-| Backend        | Node.js ou Python                  |
-| Banco de Dados | PostgreSQL                         |
-| APIs           | Google Maps API / OpenRouteService |
+Tudo gratuito.
+
+| Camada         | Tecnologia                                                        |
+| -------------- | ----------------------------------------------------------------- |
+| Frontend       | React (PWA), shadcn/ui, react-hook-form + zod                     |
+| Backend        | Supabase: Auth por perfil, Realtime e Edge Functions              |
+| Banco de Dados | PostgreSQL (Supabase)                                             |
+| Mapas e rotas  | MapLibre + tiles gratuitos, OpenRouteService (otimização VROOM)   |
+
+---
+
+## 📁 Estrutura do Projeto
+
+```text
+N3_PAC/
+├── docs/                   # Documentação técnica
+│   └── setup.md            # Como configurar o ambiente do zero
+├── supabase/               # Banco de dados
+│   ├── migrations/         # Schema versionado (tabelas, RLS, funções)
+│   ├── seed.sql            # Dados de exemplo para o banco local
+│   └── config.toml         # Configuração do Supabase local
+├── .claude/skills/         # Skills do Claude Code usadas no projeto
+├── .vscode/                # Extensões recomendadas do VS Code
+├── .mcp.json               # Servidores MCP (shadcn)
+└── package.json            # Scripts do projeto (npm run db:*)
+```
+
+Próximas pastas, conforme o desenvolvimento avançar:
+
+| Pasta                       | Para quê                                                       |
+| --------------------------- | -------------------------------------------------------------- |
+| `src/features/motorista/`   | App do motorista: rota do dia, aceite de coletas, GPS          |
+| `src/features/escritorio/`  | Dashboard, rastreador, lançar coleta, Kanban, cadastro de empresas |
+| `src/components/ui/`        | Componentes do shadcn/ui                                       |
+| `src/lib/`                  | Cliente do Supabase e chamadas ao OpenRouteService             |
+| `supabase/functions/`       | Edge Functions (cálculo e recálculo de rotas)                  |
+
+---
+
+## ▶️ Como rodar
+
+```powershell
+npm install
+npm run db:start   # sobe o banco local (precisa do Docker Desktop aberto)
+npm run db:reset   # aplica as migrations e o seed
+```
+
+Passo a passo completo em [docs/setup.md](docs/setup.md).
 
 ---
 
