@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "skills": {
+    "maplibre-cartography": {
+      "source": "maplibre/maplibre-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/maplibre-cartography/SKILL.md",
+      "computedHash": "7b68cbc20c2de52b24a65f2456b08113e08a3519f631b2ef06f4425106f2e208"
+    },
+    "maplibre-fonts-glyphs": {
+      "source": "maplibre/maplibre-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/maplibre-fonts-glyphs/SKILL.md",
+      "computedHash": "75f76690e35eee45fbba1e7a96fd9d033d709dfb22e018aeb5fec4ef03ea9e3f"
+    },
+    "maplibre-mapbox-migration": {
+      "source": "maplibre/maplibre-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/maplibre-mapbox-migration/SKILL.md",
+      "computedHash": "25277e626926ac5ea9aa4c456bdaa424103746480f8cf0825339af87e725dc31"
+    },
+    "maplibre-pmtiles-patterns": {
+      "source": "maplibre/maplibre-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/maplibre-pmtiles-patterns/SKILL.md",
+      "computedHash": "8252d1500ff74e20e6c48bb2d2c075f1cfccb14ae9d4dc2ef3fcadf10b73f540"
+    },
+    "maplibre-running-evals": {
+      "source": "maplibre/maplibre-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/maplibre-running-evals/SKILL.md",
+      "computedHash": "3a2be74901b62e36809ab5923ed24535bf9fe3f6da1938e05df7dddaf932d03a"
+    },
+    "maplibre-skill-authoring": {
+      "source": "maplibre/maplibre-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/maplibre-skill-authoring/SKILL.md",
+      "computedHash": "78a1b82bec8d29c4d1d9443af99b4194234a49866beaee2e6cda4e7dab9f343c"
+    },
+    "maplibre-source-wiring": {
+      "source": "maplibre/maplibre-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/maplibre-source-wiring/SKILL.md",
+      "computedHash": "9feb4869975c60db9c6bb95ffec09c22d91e797ca93ad16aa4aa214608d06b4e"
+    },
+    "maplibre-terrain-rendering": {
+      "source": "maplibre/maplibre-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/maplibre-terrain-rendering/SKILL.md",
+      "computedHash": "194af04e4a92534a64da47d8618761c43fb7c1f2c1f5154f6395be8849b29f61"
+    },
+    "maplibre-tile-sources": {
+      "source": "maplibre/maplibre-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/maplibre-tile-sources/SKILL.md",
+      "computedHash": "cac9ce5e81f3d0d0ed4b6a9c756838ee61a1cbe3eac3251d3af875939cf95a39"
+    },
+    "maplibre-v6-migration": {
+      "source": "maplibre/maplibre-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/maplibre-v6-migration/SKILL.md",
+      "computedHash": "1ef80705090c65b4e3edd3775f59ebac1628f5d125a18344a3373fb413e60108"
+    },
+    "migrate-radix-to-base": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/migrate-radix-to-base/SKILL.md",
+      "computedHash": "4fdc31bf287f674ba6bf91a648120f7b34cd7ef370f998f2cc116fed067789c5"
+    },
+    "progressive-web-app": {
+      "source": "secondsky/claude-skills",
+      "sourceType": "github",
+      "skillPath": "plugins/progressive-web-app/skills/progressive-web-app/SKILL.md",
+      "computedHash": "36fdf85782ec1f4569cec2c9b47129a4adcb63bd20a6c017033f0bd917b77a05"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "2d7bf36e581289fdcc3ffc592c1ec1d7457572baa72ba0d440229ef34bd7f6dd"
+    },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "af1844ade632808fc0c15cf2db87daf3b2431c5262dc8a0c3ea7d70880fadf91"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "128fac78002d916c8ca908245d398e634f540d8bcf20915b2b2359aeb18eba59"
+    },
+    "vercel-composition-patterns": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/composition-patterns/SKILL.md",
+      "computedHash": "10eb4ec94577b79ae98c63ce3e7f35f8a6a06436a4011bff083b397de6960eeb"
+    },
+    "vercel-react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/react-best-practices/SKILL.md",
+      "computedHash": "6b526d013e28073246a36f99b529bc43745d30832ecfa8217b359c34f260ca6b"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "d8e7d3afe37dcc8a97b99ffb5afdb4d0919ae0092ea8b68f44eb201f035e33ac"
+    }
+  }
+}
