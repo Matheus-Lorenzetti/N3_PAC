@@ -18,3 +18,7 @@ dist-ssr/
 .DS_Store
 Thumbs.db
 *.log
+
+# Planilhas e relatórios com dados reais (clientes, motoristas)
+*.csv
+*.xlsx

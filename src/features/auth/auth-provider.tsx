@@ -17,9 +17,7 @@ const AuthContext = React.createContext<AuthState | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = React.useState<Session | null>(null)
-  const [funcionario, setFuncionario] = React.useState<Funcionario | null>(
-    null
-  )
+  const [funcionario, setFuncionario] = React.useState<Funcionario | null>(null)
   const [carregando, setCarregando] = React.useState(true)
 
   React.useEffect(() => {
