@@ -59,7 +59,7 @@ export type ParadaOrdenada = {
 }
 
 async function buscarDados() {
-  const [servicos, empresas] = await Promise.all([
+  const [servicos, empresas, veiculo] = await Promise.all([
     // A RLS já devolve só os serviços deste motorista
     supabase
       .from("servicos_situacao")
@@ -67,12 +67,15 @@ async function buscarDados() {
       .neq("situacao", "realizada")
       .order("criado_em"),
     supabase.from("empresas").select("*").eq("ativo", true).order("nome"),
+    // Veículo que o motorista assumiu no login
+    supabase.from("veiculos").select("placa").maybeSingle(),
   ])
   const lista = empresas.data ?? []
   return {
     servicos: servicos.data ?? [],
     empresas: new Map(lista.map((e) => [e.id, e])),
     sede: lista.find((e) => e.eh_sede) ?? null,
+    placa: veiculo.data?.placa ?? null,
   }
 }
 
@@ -429,7 +432,10 @@ export function MotoristaPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuGroup>
-              <DropdownMenuLabel>{funcionario?.nome}</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                {funcionario?.nome}
+                {dados?.placa && ` · ${dados.placa}`}
+              </DropdownMenuLabel>
               <DropdownMenuItem onClick={sair}>
                 <LogOutIcon />
                 Sair

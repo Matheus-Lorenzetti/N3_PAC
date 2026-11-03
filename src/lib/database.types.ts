@@ -155,6 +155,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"uso_veiculos": {
+                  Row: {
+                    "fim": string | null,"id": number,"inicio": string,"motorista_id": string,"veiculo_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "fim"?: string | null,"id"?: never,"inicio"?: string,"motorista_id": string,"veiculo_id": number
+                  }
+                  Update: {
+                    "fim"?: string | null,"id"?: never,"inicio"?: string,"motorista_id"?: string,"veiculo_id"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "uso_veiculos_motorista_id_fkey"
+      columns: ["motorista_id"]
+isOneToOne: false
+      referencedRelation: "funcionarios"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "uso_veiculos_veiculo_id_fkey"
+      columns: ["veiculo_id"]
+isOneToOne: false
+      referencedRelation: "veiculos"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"veiculos": {
                   Row: {
                     "criado_em": string,"id": number,"modelo": string | null,"motorista_id": string | null,"placa": string
@@ -227,7 +253,21 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "iniciar_rota":
+            "assumir_veiculo":
+{ Args: { "p_placa": string }; Returns: {
+              "criado_em": string,
+"id": number,
+"modelo": string | null,
+"motorista_id": string | null,
+"placa": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "veiculos"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"iniciar_rota":
 { Args: Record<PropertyKey, never>; Returns: {
               "aceito_em": string | null,
 "concluido_em": string | null,

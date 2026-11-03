@@ -17,9 +17,11 @@ insert into public.empresas (nome, endereco, bairro, cidade, uf) values
   ('Empresa Teste C', 'Rua Bernardo Dornbusch, 500',          'Baependi',             'Jaraguá do Sul', 'SC');
 
 -- -----------------------------------------------------------------------------
--- Usuários de teste (senha: teste123)
---   motorista@teste.local  -> perfil motorista, veículo ABC1D23
---   escritorio@teste.local -> perfil escritorio
+-- Usuários de teste
+--   Escritório: escritorio@teste.local / teste123
+--   Motorista:  placa ABC1D23 (ou XYZ9A87) + nome "Motorista Teste".
+--     Por baixo, o login do motorista é derivado do nome (src/lib/login.ts):
+--     motorista.teste@motorista.transmas.local / motorista:motorista teste
 -- -----------------------------------------------------------------------------
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -28,24 +30,29 @@ insert into auth.users (
 )
 select
   '00000000-0000-0000-0000-000000000000', u.id, 'authenticated', 'authenticated', u.email,
-  extensions.crypt('teste123', extensions.gen_salt('bf')), now(),
+  extensions.crypt(u.senha, extensions.gen_salt('bf')), now(),
   '{"provider":"email","providers":["email"]}', '{}', now(), now(),
   '', '', '', ''
 from (values
-  ('3b230c89-b797-413f-90e3-599a5e5c9052'::uuid, 'motorista@teste.local'),
-  ('963ff937-7cea-41be-82b9-ffeb58993aba'::uuid, 'escritorio@teste.local')
-) as u (id, email);
+  ('3b230c89-b797-413f-90e3-599a5e5c9052'::uuid, 'motorista.teste@motorista.transmas.local', 'motorista:motorista teste'),
+  ('963ff937-7cea-41be-82b9-ffeb58993aba'::uuid, 'escritorio@teste.local', 'teste123')
+) as u (id, email, senha);
 
 insert into auth.identities (id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at)
 select gen_random_uuid(), u.id, u.id::text, 'email',
        jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true),
        now(), now(), now()
 from auth.users u
-where u.email like '%@teste.local';
+where u.id in ('3b230c89-b797-413f-90e3-599a5e5c9052', '963ff937-7cea-41be-82b9-ffeb58993aba');
 
 insert into public.funcionarios (id, nome, perfil) values
   ('3b230c89-b797-413f-90e3-599a5e5c9052', 'Motorista Teste',  'motorista'),
   ('963ff937-7cea-41be-82b9-ffeb58993aba', 'Escritório Teste', 'escritorio');
 
-insert into public.veiculos (placa, modelo, motorista_id)
-values ('ABC1D23', 'Veículo Teste', '3b230c89-b797-413f-90e3-599a5e5c9052');
+insert into public.veiculos (placa, modelo, motorista_id) values
+  ('ABC1D23', 'Veículo Teste',   '3b230c89-b797-413f-90e3-599a5e5c9052'),
+  ('XYZ9A87', 'Veículo Reserva', null);
+
+-- Histórico de uso começa com o vínculo atual
+insert into public.uso_veiculos (veiculo_id, motorista_id)
+select id, motorista_id from public.veiculos where motorista_id is not null;
