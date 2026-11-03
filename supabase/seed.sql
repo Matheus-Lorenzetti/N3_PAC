@@ -7,7 +7,7 @@
 -- Coordenadas: posição conferida pelo Matheus no mapa do app (03/11/2026), prédio da sede.
 insert into public.empresas (nome, endereco, bairro, cidade, uf, cep, latitude, longitude, eh_sede)
 values ('Transmas Encomendas e Transportes LTDA (Sede)', 'Rua Carlos Blank, 194', 'Vila Lalau',
-        'Jaraguá do Sul', 'SC', '89256100', -26.480260, -49.067570, true);
+        'Jaraguá do Sul', 'SC', '89256390', -26.480260, -49.067570, true);
 
 -- Nomes fictícios em ruas reais de Jaraguá do Sul, sem coordenadas:
 -- servem para testar a geocodificação pela tela de cadastro.
