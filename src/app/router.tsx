@@ -11,8 +11,9 @@ import { LayoutArea, type ItemMenu } from "@/app/layout-area"
 import { ExigePerfil, RedirecionaPorPerfil } from "@/app/rotas-protegidas"
 import { LoginPage } from "@/features/auth/login-page"
 import { LancarColetaPage } from "@/features/escritorio/coletas/lancar-coleta-page"
-import { EmConstrucaoPage } from "@/features/escritorio/em-construcao-page"
+import { DashboardPage } from "@/features/escritorio/dashboard/dashboard-page"
 import { MapaVeiculosPage } from "@/features/escritorio/mapa/mapa-veiculos-page"
+import { KanbanPage } from "@/features/escritorio/kanban/kanban-page"
 import { EmpresasPage } from "@/features/escritorio/empresas/empresas-page"
 import { MotoristaPage } from "@/features/motorista/motorista-page"
 
@@ -40,24 +41,8 @@ export const router = createBrowserRouter([
         element: <LayoutArea titulo="Escritório" menu={menuEscritorio} />,
         children: [
           { index: true, element: <Navigate to="dashboard" replace /> },
-          {
-            path: "dashboard",
-            element: (
-              <EmConstrucaoPage
-                titulo="Dashboard"
-                descricao="Coletas e entregas em rota, realizadas e pendentes, com alerta de atrasos."
-              />
-            ),
-          },
-          {
-            path: "kanban",
-            element: (
-              <EmConstrucaoPage
-                titulo="Kanban"
-                descricao="Quadro com as colunas Aguardando, Pendente, Em rota e Realizada."
-              />
-            ),
-          },
+          { path: "dashboard", element: <DashboardPage /> },
+          { path: "kanban", element: <KanbanPage /> },
           { path: "mapa", element: <MapaVeiculosPage /> },
           { path: "lancar-coleta", element: <LancarColetaPage /> },
           { path: "empresas", element: <EmpresasPage /> },
