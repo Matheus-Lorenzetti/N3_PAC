@@ -48,3 +48,8 @@ export function distanciaKm(
       Math.sin(dLon / 2) ** 2
   return 6371 * 2 * Math.asin(Math.sqrt(h))
 }
+
+// Aberto e vindo de dia anterior = "o que ficou do dia anterior"
+export function ehAtrasado(servico: ServicoSituacao) {
+  return servico.status !== "realizada" && !!servico.atrasado
+}

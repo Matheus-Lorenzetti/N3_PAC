@@ -21,8 +21,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { PorRegiao } from "@/features/escritorio/dashboard/por-regiao"
 import { useServicosDoDia } from "@/features/escritorio/use-servicos-do-dia"
 import {
+  ehAtrasado,
   ROTULO_SITUACAO,
   VARIANTE_SITUACAO,
   type ServicoSituacao,
@@ -31,9 +33,7 @@ import {
 
 type Tipo = "coleta" | "entrega"
 
-// Aberto e vindo de dia anterior = "o que ficou do dia anterior"
-const ehPendente = (s: ServicoSituacao) =>
-  s.status !== "realizada" && !!s.atrasado
+const ehPendente = ehAtrasado
 
 function contar(servicos: ServicoSituacao[], tipo: Tipo) {
   const doTipo = servicos.filter((s) => s.tipo === tipo)
@@ -173,6 +173,8 @@ export function DashboardPage() {
           />
         </div>
       </section>
+
+      <PorRegiao dados={dados} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
