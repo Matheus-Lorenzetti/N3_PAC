@@ -9,6 +9,8 @@ dist-ssr/
 .env
 .env.*
 !.env.example
+# Só URL e chave pública (publishable) do Supabase na nuvem: pode ir para o git
+!.env.production
 *.local
 
 # Configurações locais do Claude Code
@@ -22,3 +24,6 @@ Thumbs.db
 # Planilhas e relatórios com dados reais (clientes, motoristas)
 *.csv
 *.xlsx
+
+# Dados reais para carregar na nuvem (clientes): nunca no git
+supabase/dados-*.sql
