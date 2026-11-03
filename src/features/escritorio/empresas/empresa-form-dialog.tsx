@@ -27,6 +27,13 @@ import { supabase, type Tabela } from "@/lib/supabase"
 
 const empresaSchema = z.object({
   nome: z.string().trim().min(1, "Informe o nome"),
+  cnpj: z
+    .string()
+    .refine(
+      (valor) => [0, 14].includes(somenteDigitos(valor).length),
+      "O CNPJ tem 14 dígitos"
+    ),
+  telefone: z.string().trim().max(30),
   cep: z
     .string()
     .refine(
@@ -47,6 +54,8 @@ type Empresa = Tabela<"empresas">
 
 const vazio: EmpresaForm = {
   nome: "",
+  cnpj: "",
+  telefone: "",
   cep: "",
   endereco: "",
   bairro: "",
@@ -57,6 +66,8 @@ const vazio: EmpresaForm = {
 function paraFormulario(empresa: Empresa): EmpresaForm {
   return {
     nome: empresa.nome,
+    cnpj: empresa.cnpj ?? "",
+    telefone: empresa.telefone ?? "",
     cep: empresa.cep ?? "",
     endereco: empresa.endereco,
     bairro: empresa.bairro ?? "",
@@ -141,6 +152,8 @@ function Formulario({
   async function salvar(valores: EmpresaForm) {
     const dados = {
       nome: valores.nome,
+      cnpj: somenteDigitos(valores.cnpj) || null,
+      telefone: valores.telefone || null,
       cep: somenteDigitos(valores.cep) || null,
       endereco: valores.endereco,
       bairro: valores.bairro || null,
@@ -196,6 +209,42 @@ function Formulario({
             </Field>
           )}
         />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Controller
+            name="cnpj"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor="cnpj">CNPJ</FieldLabel>
+                <Input
+                  {...field}
+                  id="cnpj"
+                  inputMode="numeric"
+                  placeholder="Opcional"
+                  aria-invalid={fieldState.invalid}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+          <Controller
+            name="telefone"
+            control={form.control}
+            render={({ field }) => (
+              <Field>
+                <FieldLabel htmlFor="telefone">Telefone</FieldLabel>
+                <Input
+                  {...field}
+                  id="telefone"
+                  type="tel"
+                  placeholder="Opcional"
+                />
+              </Field>
+            )}
+          />
+        </div>
         <Controller
           name="cep"
           control={form.control}

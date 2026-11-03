@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "empresas": {
                   Row: {
-                    "ativo": boolean,"bairro": string | null,"cep": string | null,"cidade": string,"criado_em": string,"eh_sede": boolean,"endereco": string,"id": number,"latitude": number | null,"longitude": number | null,"nome": string,"uf": string
+                    "ativo": boolean,"bairro": string | null,"cep": string | null,"cidade": string,"cnpj": string | null,"criado_em": string,"eh_sede": boolean,"endereco": string,"id": number,"latitude": number | null,"longitude": number | null,"nome": string,"telefone": string | null,"uf": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "ativo"?: boolean,"bairro"?: string | null,"cep"?: string | null,"cidade": string,"criado_em"?: string,"eh_sede"?: boolean,"endereco": string,"id"?: never,"latitude"?: number | null,"longitude"?: number | null,"nome": string,"uf": string
+                    "ativo"?: boolean,"bairro"?: string | null,"cep"?: string | null,"cidade": string,"cnpj"?: string | null,"criado_em"?: string,"eh_sede"?: boolean,"endereco": string,"id"?: never,"latitude"?: number | null,"longitude"?: number | null,"nome": string,"telefone"?: string | null,"uf": string
                   }
                   Update: {
-                    "ativo"?: boolean,"bairro"?: string | null,"cep"?: string | null,"cidade"?: string,"criado_em"?: string,"eh_sede"?: boolean,"endereco"?: string,"id"?: never,"latitude"?: number | null,"longitude"?: number | null,"nome"?: string,"uf"?: string
+                    "ativo"?: boolean,"bairro"?: string | null,"cep"?: string | null,"cidade"?: string,"cnpj"?: string | null,"criado_em"?: string,"eh_sede"?: boolean,"endereco"?: string,"id"?: never,"latitude"?: number | null,"longitude"?: number | null,"nome"?: string,"telefone"?: string | null,"uf"?: string
                   }
                   Relationships: [
                     
