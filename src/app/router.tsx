@@ -13,7 +13,7 @@ import { LoginPage } from "@/features/auth/login-page"
 import { LancarColetaPage } from "@/features/escritorio/coletas/lancar-coleta-page"
 import { EmConstrucaoPage } from "@/features/escritorio/em-construcao-page"
 import { EmpresasPage } from "@/features/escritorio/empresas/empresas-page"
-import { InicioMotoristaPage } from "@/features/motorista/inicio-page"
+import { MotoristaPage } from "@/features/motorista/motorista-page"
 
 const menuEscritorio: ItemMenu[] = [
   { para: "dashboard", rotulo: "Dashboard", icone: LayoutDashboardIcon },
@@ -29,12 +29,7 @@ export const router = createBrowserRouter([
   {
     path: "/motorista",
     element: <ExigePerfil perfil="motorista" />,
-    children: [
-      {
-        element: <LayoutArea titulo="Motorista" />,
-        children: [{ index: true, element: <InicioMotoristaPage /> }],
-      },
-    ],
+    children: [{ index: true, element: <MotoristaPage /> }],
   },
   {
     path: "/escritorio",
