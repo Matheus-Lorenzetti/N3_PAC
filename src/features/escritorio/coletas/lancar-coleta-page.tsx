@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { SendIcon } from "lucide-react"
+import { SendIcon, SparklesIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { Controller, useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 
@@ -52,6 +52,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  sugerirMotorista,
+  type Posicao,
+  type Sugestao,
+} from "@/features/escritorio/coletas/sugestao"
 import { EtiquetaRegiao } from "@/features/escritorio/regioes/etiqueta-regiao"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -65,7 +70,7 @@ import {
 import { supabase, type Tabela } from "@/lib/supabase"
 
 type Empresa = Tabela<"empresas"> & {
-  regiao: { nome: string; cor: string } | null
+  regiao: { id: number; nome: string; cor: string } | null
 }
 type Motorista = { id: string; nome: string; placa: string | null }
 
@@ -81,7 +86,7 @@ async function buscarCadastros() {
   const [empresas, motoristas] = await Promise.all([
     supabase
       .from("empresas")
-      .select("*, regiao:regioes(nome, cor)")
+      .select("*, regiao:regioes(id, nome, cor)")
       .eq("ativo", true)
       .eq("eh_sede", false)
       .order("nome"),
@@ -102,6 +107,33 @@ async function buscarCadastros() {
   }
 }
 
+// Serviços abertos de todos os motoristas e a última posição de cada um:
+// base da sugestão de motorista
+async function buscarContexto() {
+  const [abertos, posicoes] = await Promise.all([
+    supabase
+      .from("servicos_situacao")
+      .select("motorista_id, empresa_id")
+      .neq("status", "realizada"),
+    supabase
+      .from("ultimas_localizacoes")
+      .select("motorista_id, latitude, longitude, registrado_em"),
+  ])
+  return {
+    abertos: abertos.data ?? [],
+    posicoes: new Map<string, Posicao>(
+      (posicoes.data ?? []).map((p) => [
+        p.motorista_id!,
+        {
+          latitude: p.latitude!,
+          longitude: p.longitude!,
+          registradoEm: p.registrado_em!,
+        },
+      ])
+    ),
+  }
+}
+
 // Coletas de hoje e as que sobraram de dias anteriores
 function buscarColetas() {
   return supabase
@@ -116,6 +148,9 @@ export function LancarColetaPage() {
   const [empresas, setEmpresas] = useState<Empresa[]>([])
   const [motoristas, setMotoristas] = useState<Motorista[]>([])
   const [coletas, setColetas] = useState<ServicoSituacao[] | null>(null)
+  const [contexto, setContexto] = useState<Awaited<
+    ReturnType<typeof buscarContexto>
+  > | null>(null)
 
   const form = useForm<ColetaForm>({
     resolver: zodResolver(coletaSchema),
@@ -124,6 +159,7 @@ export function LancarColetaPage() {
 
   const atualizarColetas = useCallback(() => {
     buscarColetas().then(({ data }) => setColetas(data ?? []))
+    buscarContexto().then(setContexto)
   }, [])
 
   useEffect(() => {
@@ -136,6 +172,7 @@ export function LancarColetaPage() {
       }
     })
     buscarColetas().then(({ data }) => setColetas(data ?? []))
+    buscarContexto().then(setContexto)
 
     // A lista acompanha ao vivo quando o motorista aceita ou conclui
     const canal = supabase
@@ -144,6 +181,12 @@ export function LancarColetaPage() {
         "postgres_changes",
         { event: "*", schema: "public", table: "servicos" },
         () => atualizarColetas()
+      )
+      // Posição nova pode mudar quem está mais perto
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "localizacoes" },
+        () => buscarContexto().then(setContexto)
       )
       .subscribe()
     return () => {
@@ -159,6 +202,35 @@ export function LancarColetaPage() {
     () => new Map(motoristas.map((m) => [m.id, m.nome])),
     [motoristas]
   )
+
+  // Sugestão de motorista para a empresa escolhida (região do k-means, distância, carga)
+  const calcularSugestao = useCallback(
+    (empresaId: number | undefined): Sugestao | null => {
+      const empresa = empresas.find((e) => e.id === empresaId)
+      if (!empresa || !contexto) return null
+      const regiaoDaEmpresa = new Map(empresas.map((e) => [e.id, e.regiao_id]))
+      return sugerirMotorista({
+        empresa: {
+          latitude: empresa.latitude ?? 0,
+          longitude: empresa.longitude ?? 0,
+          regiaoId: empresa.regiao_id,
+        },
+        regiaoNome: empresa.regiao?.nome ?? null,
+        motoristas,
+        abertos: contexto.abertos.map((s) => ({
+          motoristaId: s.motorista_id!,
+          regiaoId: regiaoDaEmpresa.get(s.empresa_id!) ?? null,
+        })),
+        posicoes: empresa.latitude === null ? new Map() : contexto.posicoes,
+      })
+    },
+    [empresas, contexto, motoristas]
+  )
+  const empresaEscolhida = useWatch({
+    control: form.control,
+    name: "empresaId",
+  })
+  const sugestao = calcularSugestao(empresaEscolhida)
 
   async function lancar(valores: ColetaForm) {
     const { error } = await supabase.from("servicos").insert({
@@ -200,9 +272,16 @@ export function LancarColetaPage() {
                     <Combobox
                       items={empresas}
                       value={empresas.find((e) => e.id === field.value) ?? null}
-                      onValueChange={(empresa: Empresa | null) =>
+                      onValueChange={(empresa: Empresa | null) => {
                         field.onChange(empresa?.id)
-                      }
+                        // Já escolhe o motorista sugerido; o escritório pode trocar
+                        const sugerido = calcularSugestao(empresa?.id)
+                        if (sugerido) {
+                          form.setValue("motoristaId", sugerido.motoristaId, {
+                            shouldValidate: true,
+                          })
+                        }
+                      }}
                       itemToStringLabel={(empresa: Empresa) => empresa.nome}
                     >
                       <ComboboxInput
@@ -269,13 +348,43 @@ export function LancarColetaPage() {
                           {motoristas.map((m) => (
                             <SelectItem key={m.id} value={m.id}>
                               {m.placa ? `${m.nome} · ${m.placa}` : m.nome}
+                              {sugestao?.motoristaId === m.id && (
+                                <Badge variant="secondary">Sugerido</Badge>
+                              )}
                             </SelectItem>
                           ))}
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                    {fieldState.invalid && (
+                    {fieldState.invalid ? (
                       <FieldError errors={[fieldState.error]} />
+                    ) : (
+                      sugestao && (
+                        <FieldDescription className="flex items-start gap-1">
+                          <SparklesIcon className="mt-0.5 size-3.5 shrink-0" />
+                          <span>
+                            Sugerido:{" "}
+                            {motoristas.find(
+                              (m) => m.id === sugestao.motoristaId
+                            )?.placa ?? ""}{" "}
+                            — {sugestao.motivo}
+                            {field.value !== sugestao.motoristaId && (
+                              <>
+                                {" "}
+                                <button
+                                  type="button"
+                                  className="underline underline-offset-2"
+                                  onClick={() =>
+                                    field.onChange(sugestao.motoristaId)
+                                  }
+                                >
+                                  Usar sugestão
+                                </button>
+                              </>
+                            )}
+                          </span>
+                        </FieldDescription>
+                      )
                     )}
                   </Field>
                 )}

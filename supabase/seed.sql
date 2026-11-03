@@ -19,7 +19,8 @@ insert into public.empresas (nome, endereco, bairro, cidade, uf) values
 -- -----------------------------------------------------------------------------
 -- Usuários de teste
 --   Escritório: escritorio@teste.local / teste123
---   Motorista:  placa ABC1D23 (ou XYZ9A87) + nome "Motorista Teste".
+--   Motorista:  placa ABC1D23 + nome "Motorista Teste"
+--               placa XYZ9A87 + nome "Motorista Dois"
 --     Por baixo, o login do motorista é derivado do nome (src/lib/login.ts):
 --     motorista.teste@motorista.transmas.local / motorista:motorista teste
 -- -----------------------------------------------------------------------------
@@ -35,6 +36,7 @@ select
   '', '', '', ''
 from (values
   ('3b230c89-b797-413f-90e3-599a5e5c9052'::uuid, 'motorista.teste@motorista.transmas.local', 'motorista:motorista teste'),
+  ('d92f8333-fbbf-4aab-8404-d86b9159abbb'::uuid, 'motorista.dois@motorista.transmas.local', 'motorista:motorista dois'),
   ('963ff937-7cea-41be-82b9-ffeb58993aba'::uuid, 'escritorio@teste.local', 'teste123')
 ) as u (id, email, senha);
 
@@ -43,15 +45,17 @@ select gen_random_uuid(), u.id, u.id::text, 'email',
        jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true),
        now(), now(), now()
 from auth.users u
-where u.id in ('3b230c89-b797-413f-90e3-599a5e5c9052', '963ff937-7cea-41be-82b9-ffeb58993aba');
+where u.id in ('3b230c89-b797-413f-90e3-599a5e5c9052', 'd92f8333-fbbf-4aab-8404-d86b9159abbb',
+               '963ff937-7cea-41be-82b9-ffeb58993aba');
 
 insert into public.funcionarios (id, nome, perfil) values
   ('3b230c89-b797-413f-90e3-599a5e5c9052', 'Motorista Teste',  'motorista'),
+  ('d92f8333-fbbf-4aab-8404-d86b9159abbb', 'Motorista Dois',   'motorista'),
   ('963ff937-7cea-41be-82b9-ffeb58993aba', 'Escritório Teste', 'escritorio');
 
 insert into public.veiculos (placa, modelo, motorista_id) values
   ('ABC1D23', 'Veículo Teste',   '3b230c89-b797-413f-90e3-599a5e5c9052'),
-  ('XYZ9A87', 'Veículo Reserva', null);
+  ('XYZ9A87', 'Veículo Reserva', 'd92f8333-fbbf-4aab-8404-d86b9159abbb');
 
 -- Histórico de uso começa com o vínculo atual
 insert into public.uso_veiculos (veiculo_id, motorista_id)
