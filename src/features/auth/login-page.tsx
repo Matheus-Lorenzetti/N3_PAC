@@ -80,7 +80,7 @@ export function LoginPage() {
 
     if (ehEmail(identificador)) {
       const { error } = await supabase.auth.signInWithPassword({
-        email: identificador,
+        email: identificador.toLowerCase(),
         password: segredo,
       })
       if (error) setErro("E-mail ou senha incorretos")
@@ -140,7 +140,10 @@ export function LoginPage() {
                       {...field}
                       id="identificador"
                       autoComplete="username"
-                      autoCapitalize="characters"
+                      // A placa vira maiúscula sozinha; o e-mail precisa do teclado normal
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
                       placeholder="ABC1D23 ou nome@transmas.com.br"
                       aria-invalid={fieldState.invalid}
                     />
