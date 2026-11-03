@@ -1,5 +1,8 @@
 // OpenRouteService: otimização de rota (VROOM) com a geometria já incluída.
 // Uma chamada por recálculo, só quando muda o conjunto de paradas.
+// O pedido passa pela Edge Function otimizar-rota, que guarda a chave do ORS.
+
+import { supabase } from "@/lib/supabase"
 
 export type Ponto = { latitude: number; longitude: number }
 
@@ -15,44 +18,17 @@ export type RotaOtimizada = {
   linha: [number, number][]
 }
 
-const paraLonLat = (p: Ponto) => [p.longitude, p.latitude]
-
-export async function otimizarRota({
-  inicio,
-  fim,
-  paradas,
-}: {
+export async function otimizarRota(pedido: {
   inicio: Ponto
   fim: Ponto
   paradas: Parada[]
 }): Promise<RotaOtimizada> {
-  const chave = import.meta.env.VITE_ORS_API_KEY
-  if (!chave) throw new Error("Falta VITE_ORS_API_KEY no .env.local")
-
-  const resposta = await fetch(
-    "https://api.openrouteservice.org/optimization",
-    {
-      method: "POST",
-      headers: { Authorization: chave, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jobs: paradas.map((p) => ({ id: p.id, location: paraLonLat(p) })),
-        vehicles: [
-          {
-            id: 1,
-            profile: "driving-car",
-            start: paraLonLat(inicio),
-            end: paraLonLat(fim),
-          },
-        ],
-        options: { g: true },
-      }),
-    }
+  const { data: dados, error } = await supabase.functions.invoke(
+    "otimizar-rota",
+    { body: pedido }
   )
-  if (!resposta.ok) {
-    throw new Error(`OpenRouteService respondeu ${resposta.status}`)
-  }
+  if (error) throw new Error("Não foi possível calcular a rota agora")
 
-  const dados = await resposta.json()
   const rota = dados.routes?.[0]
   return {
     ordem: (rota?.steps ?? [])

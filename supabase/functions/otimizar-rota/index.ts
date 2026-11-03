@@ -1,0 +1,98 @@
+// Edge Function: calcula a rota otimizada no OpenRouteService (VROOM).
+// A chave do ORS fica só no servidor (segredo ORS_API_KEY), nunca no navegador.
+// Só usuários logados chamam: a função confere a sessão no Supabase Auth
+// (a chave pública sozinha não basta).
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+}
+
+// Limite de paradas por pedido (o plano grátis do ORS aceita até 50 jobs)
+const MAXIMO_PARADAS = 50
+
+type Ponto = { latitude: number; longitude: number }
+type Parada = Ponto & { id: number }
+
+const ehPonto = (p: unknown): p is Ponto =>
+  typeof p === "object" &&
+  p !== null &&
+  Number.isFinite((p as Ponto).latitude) &&
+  Number.isFinite((p as Ponto).longitude)
+
+// Pergunta ao Supabase Auth se o token é de um usuário logado
+async function usuarioLogado(autorizacao: string | null) {
+  if (!autorizacao?.startsWith("Bearer ")) return false
+  const resposta = await fetch(`${Deno.env.get("SUPABASE_URL")}/auth/v1/user`, {
+    headers: {
+      Authorization: autorizacao,
+      apikey: Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    },
+  })
+  return resposta.ok
+}
+
+function resposta(corpo: unknown, status = 200) {
+  return new Response(JSON.stringify(corpo), {
+    status,
+    headers: { ...CORS, "Content-Type": "application/json" },
+  })
+}
+
+Deno.serve(async (pedido) => {
+  if (pedido.method === "OPTIONS") return new Response("ok", { headers: CORS })
+  if (pedido.method !== "POST") return resposta({ erro: "Use POST" }, 405)
+  if (!(await usuarioLogado(pedido.headers.get("Authorization")))) {
+    return resposta({ erro: "Faça login para calcular rotas" }, 401)
+  }
+
+  const chave = Deno.env.get("ORS_API_KEY")
+  if (!chave) return resposta({ erro: "ORS_API_KEY não configurada" }, 500)
+
+  let entrada: { inicio?: unknown; fim?: unknown; paradas?: unknown }
+  try {
+    entrada = await pedido.json()
+  } catch {
+    return resposta({ erro: "JSON inválido" }, 400)
+  }
+
+  const { inicio, fim, paradas } = entrada
+  if (
+    !ehPonto(inicio) ||
+    !ehPonto(fim) ||
+    !Array.isArray(paradas) ||
+    paradas.length === 0 ||
+    paradas.length > MAXIMO_PARADAS ||
+    !paradas.every((p) => ehPonto(p) && Number.isInteger((p as Parada).id))
+  ) {
+    return resposta({ erro: "Informe inicio, fim e de 1 a 50 paradas" }, 400)
+  }
+
+  const paraLonLat = (p: Ponto) => [p.longitude, p.latitude]
+  const ors = await fetch("https://api.openrouteservice.org/optimization", {
+    method: "POST",
+    headers: { Authorization: chave, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jobs: (paradas as Parada[]).map((p) => ({
+        id: p.id,
+        location: paraLonLat(p),
+      })),
+      vehicles: [
+        {
+          id: 1,
+          profile: "driving-car",
+          start: paraLonLat(inicio),
+          end: paraLonLat(fim),
+        },
+      ],
+      options: { g: true },
+    }),
+  })
+
+  if (!ors.ok) {
+    return resposta({ erro: `OpenRouteService respondeu ${ors.status}` }, 502)
+  }
+  return resposta(await ors.json())
+})
