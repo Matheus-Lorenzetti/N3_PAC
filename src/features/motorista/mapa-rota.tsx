@@ -1,23 +1,15 @@
-import "maplibre-gl/dist/maplibre-gl.css"
-
-import {
-  LngLatBounds,
-  Map as MapaLibre,
-  Marker,
-  setWorkerUrl,
-  type GeoJSONSource,
-} from "maplibre-gl"
-import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url"
+import { Map as MapaLibre, Marker, type GeoJSONSource } from "maplibre-gl"
 import { useEffect, useRef } from "react"
 
 import type { Posicao } from "@/features/motorista/use-gps"
+import {
+  adicionarCamadaRota,
+  criarMapa,
+  elementoMarcador,
+  enquadrar,
+  quandoPronto,
+} from "@/lib/mapa"
 import type { Ponto } from "@/lib/ors"
-
-setWorkerUrl(workerUrl)
-
-// OpenFreeMap: mapa do OpenStreetMap grátis e sem chave
-const ESTILO = "https://tiles.openfreemap.org/styles/liberty"
-const COR_ROTA = "#2563eb"
 
 export type ParadaNoMapa = Ponto & {
   id: number
@@ -25,11 +17,11 @@ export type ParadaNoMapa = Ponto & {
   tipo: "coleta" | "entrega"
 }
 
-function elemento(classes: string, texto = "") {
-  const div = document.createElement("div")
-  div.className = classes
-  div.textContent = texto
-  return div
+export function classeParada(tipo: "coleta" | "entrega") {
+  // Coleta = círculo, entrega = quadrado
+  return `flex size-7 items-center justify-center bg-primary text-xs font-bold text-primary-foreground shadow ring-2 ring-background ${
+    tipo === "coleta" ? "rounded-full" : "rounded-md"
+  }`
 }
 
 export function MapaRota({
@@ -49,42 +41,10 @@ export function MapaRota({
   const marcadorPosicao = useRef<Marker | null>(null)
 
   // Cria o mapa uma vez, centrado na sede
+  const { latitude, longitude } = sede
   useEffect(() => {
-    const instancia = new MapaLibre({
-      container: container.current!,
-      style: ESTILO,
-      center: [sede.longitude, sede.latitude],
-      zoom: 12,
-      attributionControl: { compact: true },
-    })
-    instancia.on("load", () => {
-      instancia.addSource("rota", {
-        type: "geojson",
-        data: { type: "FeatureCollection", features: [] },
-      })
-      instancia.addLayer({
-        id: "rota-contorno",
-        type: "line",
-        source: "rota",
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#ffffff", "line-width": 9 },
-      })
-      instancia.addLayer({
-        id: "rota",
-        type: "line",
-        source: "rota",
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": COR_ROTA, "line-width": 5 },
-      })
-    })
-    new Marker({
-      element: elemento(
-        "rounded-md bg-foreground px-1.5 py-0.5 text-xs font-semibold text-background shadow",
-        "Sede"
-      ),
-    })
-      .setLngLat([sede.longitude, sede.latitude])
-      .addTo(instancia)
+    const instancia = criarMapa(container.current!, { latitude, longitude })
+    instancia.on("load", () => adicionarCamadaRota(instancia, "rota"))
     mapa.current = instancia
     return () => {
       instancia.remove()
@@ -92,16 +52,14 @@ export function MapaRota({
       marcadorPosicao.current = null
       marcadoresParadas.current = []
     }
-  }, [sede.latitude, sede.longitude])
+  }, [latitude, longitude])
 
   // Linha da rota e enquadramento quando a rota muda
   useEffect(() => {
     const instancia = mapa.current
     if (!instancia) return
-
-    const desenhar = () => {
-      const fonte = instancia.getSource<GeoJSONSource>("rota")
-      fonte?.setData({
+    quandoPronto(instancia, "rota", () => {
+      instancia.getSource<GeoJSONSource>("rota")?.setData({
         type: "FeatureCollection",
         features: linha.length
           ? [
@@ -113,22 +71,9 @@ export function MapaRota({
             ]
           : [],
       })
-      if (linha.length) {
-        const limites = linha.reduce(
-          (caixa, ponto) => caixa.extend(ponto),
-          new LngLatBounds(linha[0], linha[0])
-        )
-        // Espaço extra embaixo para o cartão da próxima parada
-        instancia.fitBounds(limites, {
-          padding: { top: 80, left: 40, right: 40, bottom: 200 },
-          maxZoom: 15,
-        })
-      }
-    }
-
-    if (instancia.getSource("rota")) desenhar()
-    // O "load" que cria a fonte foi registrado antes, então roda primeiro
-    else instancia.once("load", desenhar)
+      // Espaço extra embaixo para o cartão da próxima parada
+      enquadrar(instancia, linha, { top: 80, left: 40, right: 40, bottom: 200 })
+    })
   }, [linha])
 
   // Marcadores numerados na ordem de visita
@@ -138,10 +83,8 @@ export function MapaRota({
     marcadoresParadas.current.forEach((m) => m.remove())
     marcadoresParadas.current = paradas.map((parada) =>
       new Marker({
-        element: elemento(
-          parada.tipo === "coleta"
-            ? "flex size-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow ring-2 ring-background"
-            : "flex size-7 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground shadow ring-2 ring-background",
+        element: elementoMarcador(
+          classeParada(parada.tipo),
           String(parada.numero)
         ),
       })
@@ -157,7 +100,7 @@ export function MapaRota({
     const ponto: [number, number] = [posicao.longitude, posicao.latitude]
     // setLngLat antes do addTo: o MapLibre precisa da posição para desenhar
     marcadorPosicao.current ??= new Marker({
-      element: elemento(
+      element: elementoMarcador(
         "size-4 rounded-full border-2 border-white bg-blue-600 shadow-[0_0_0_6px_rgb(37_99_235/0.25)]"
       ),
     })

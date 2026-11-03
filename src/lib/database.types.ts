@@ -71,6 +71,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"rotas": {
+                  Row: {
+                    "calculada_em": string,"data": string,"distancia_m": number,"duracao_s": number,"linha": NonNullable<Json>,"motorista_id": string,"ordem": (number)[]
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "calculada_em"?: string,"data"?: string,"distancia_m"?: number,"duracao_s"?: number,"linha"?: NonNullable<Json>,"motorista_id"?: string,"ordem"?: (number)[]
+                  }
+                  Update: {
+                    "calculada_em"?: string,"data"?: string,"distancia_m"?: number,"duracao_s"?: number,"linha"?: NonNullable<Json>,"motorista_id"?: string,"ordem"?: (number)[]
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "rotas_motorista_id_fkey"
+      columns: ["motorista_id"]
+isOneToOne: false
+      referencedRelation: "funcionarios"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"servico_eventos": {
                   Row: {
                     "alterado_em": string,"alterado_por": string | null,"id": number,"servico_id": number,"status_anterior": Database["public"]['Enums']["status_servico"] | null,"status_novo": Database["public"]['Enums']["status_servico"]
@@ -184,6 +204,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     },{
       foreignKeyName: "servicos_motorista_id_fkey"
+      columns: ["motorista_id"]
+isOneToOne: false
+      referencedRelation: "funcionarios"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"ultimas_localizacoes": {
+                  Row: {
+                    "id": number | null,"latitude": number | null,"longitude": number | null,"motorista_id": string | null,"precisao_m": number | null,"registrado_em": string | null,"velocidade_ms": number | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "localizacoes_motorista_id_fkey"
       columns: ["motorista_id"]
 isOneToOne: false
       referencedRelation: "funcionarios"

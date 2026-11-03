@@ -76,6 +76,27 @@ async function buscarDados() {
 
 type Dados = Awaited<ReturnType<typeof buscarDados>>
 
+// Grava a rota do dia para o mapa do escritório (uma linha por motorista por dia)
+function gravarRota(rota: {
+  ordem: number[]
+  linha: [number, number][]
+  distanciaM: number
+  duracaoSeg: number
+}) {
+  supabase
+    .from("rotas")
+    .upsert({
+      ordem: rota.ordem,
+      linha: rota.linha,
+      distancia_m: rota.distanciaM,
+      duracao_s: rota.duracaoSeg,
+      calculada_em: new Date().toISOString(),
+    })
+    .then(({ error }) => {
+      if (error) console.warn("[rota] não foi possível gravar", error)
+    })
+}
+
 function posicaoAtual(): Promise<GeolocationPosition | null> {
   return new Promise((resolver) => {
     if (!navigator.geolocation) return resolver(null)
@@ -197,13 +218,24 @@ export function MotoristaPage() {
 
   // Recalcula só quando muda o conjunto de paradas (aceitou, concluiu, adicionou)
   useEffect(() => {
-    if (!iniciado || !sede || !paradasNoMapa.length) return
+    if (!iniciado || !sede) return
+    if (!paradasNoMapa.length) {
+      // Sem paradas: limpa a rota que o escritório vê
+      gravarRota({ ordem: [], linha: [], distanciaM: 0, duracaoSeg: 0 })
+      return
+    }
     // Começa de onde o motorista está; termina sempre na sede
     const inicio = posicaoRef.current ?? sede
     otimizarRota({ inicio, fim: sede, paradas: paradasNoMapa })
       .then((resultado) => {
         setRota({ ...resultado, chave: chaveRota })
         setErroRota(null)
+        gravarRota({
+          ordem: resultado.ordem.map((o) => o.id),
+          linha: resultado.linha,
+          distanciaM: resultado.distanciaM,
+          duracaoSeg: resultado.duracaoSeg,
+        })
       })
       .catch((erro: Error) => setErroRota(erro.message))
     // paradasNoMapa muda junto com chaveRota

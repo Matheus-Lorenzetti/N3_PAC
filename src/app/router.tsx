@@ -12,6 +12,7 @@ import { ExigePerfil, RedirecionaPorPerfil } from "@/app/rotas-protegidas"
 import { LoginPage } from "@/features/auth/login-page"
 import { LancarColetaPage } from "@/features/escritorio/coletas/lancar-coleta-page"
 import { EmConstrucaoPage } from "@/features/escritorio/em-construcao-page"
+import { MapaVeiculosPage } from "@/features/escritorio/mapa/mapa-veiculos-page"
 import { EmpresasPage } from "@/features/escritorio/empresas/empresas-page"
 import { MotoristaPage } from "@/features/motorista/motorista-page"
 
@@ -57,15 +58,7 @@ export const router = createBrowserRouter([
               />
             ),
           },
-          {
-            path: "mapa",
-            element: (
-              <EmConstrucaoPage
-                titulo="Mapa dos veículos"
-                descricao="Todos os veículos ao vivo, ou um de cada vez com a rota."
-              />
-            ),
-          },
+          { path: "mapa", element: <MapaVeiculosPage /> },
           { path: "lancar-coleta", element: <LancarColetaPage /> },
           { path: "empresas", element: <EmpresasPage /> },
         ],
