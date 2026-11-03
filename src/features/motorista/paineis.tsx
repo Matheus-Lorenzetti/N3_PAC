@@ -103,9 +103,9 @@ export function PainelRota({
                 />
                 <ComboboxContent>
                   <ComboboxEmpty>
-                          Nenhuma empresa encontrada. Tente parte do nome, a cidade
-                          ou o CNPJ.
-                        </ComboboxEmpty>
+                    Nenhuma empresa encontrada. Tente parte do nome, a cidade ou
+                    o CNPJ.
+                  </ComboboxEmpty>
                   <ComboboxList>
                     {(empresa: Empresa) => (
                       <ComboboxItem key={empresa.id} value={empresa}>

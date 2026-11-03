@@ -47,6 +47,7 @@ import { PainelColetas, PainelRota } from "@/features/motorista/paineis"
 import { useGps } from "@/features/motorista/use-gps"
 import { otimizarRota, type Ponto, type RotaOtimizada } from "@/lib/ors"
 import { distanciaKm, type ServicoSituacao } from "@/lib/servicos"
+import { buscarTodas } from "@/lib/paginacao"
 import { supabase, type Tabela } from "@/lib/supabase"
 
 type Empresa = Tabela<"empresas">
@@ -66,7 +67,15 @@ async function buscarDados() {
       .select("*")
       .neq("situacao", "realizada")
       .order("criado_em"),
-    supabase.from("empresas").select("*").eq("ativo", true).order("nome"),
+    buscarTodas((de, ate) =>
+      supabase
+        .from("empresas")
+        .select("*")
+        .eq("ativo", true)
+        .order("nome")
+        .order("id")
+        .range(de, ate)
+    ),
     // Veículo que o motorista assumiu no login
     supabase.from("veiculos").select("placa").maybeSingle(),
   ])

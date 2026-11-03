@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 
 import { hojeEmBrasilia, type ServicoSituacao } from "@/lib/servicos"
+import { buscarTodas } from "@/lib/paginacao"
 import { supabase, type Tabela } from "@/lib/supabase"
 
 type Empresa = Tabela<"empresas"> & {
@@ -16,7 +17,13 @@ async function buscar() {
       .select("*")
       .or(`status.neq.realizada,concluido_em.gte.${inicioDoDia}`)
       .order("criado_em"),
-    supabase.from("empresas").select("*, regiao:regioes(id, nome, cor)"),
+    buscarTodas((de, ate) =>
+      supabase
+        .from("empresas")
+        .select("*, regiao:regioes(id, nome, cor)")
+        .order("id")
+        .range(de, ate)
+    ),
     supabase
       .from("funcionarios")
       .select("id, nome, veiculos(placa)")

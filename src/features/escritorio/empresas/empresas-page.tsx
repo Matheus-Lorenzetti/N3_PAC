@@ -28,16 +28,21 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { EmpresaFormDialog } from "@/features/escritorio/empresas/empresa-form-dialog"
+import { buscarTodas } from "@/lib/paginacao"
 import { supabase, type Tabela } from "@/lib/supabase"
 
 type Empresa = Tabela<"empresas">
 
 function buscarEmpresas() {
-  return supabase
-    .from("empresas")
-    .select("*")
-    .order("eh_sede", { ascending: false })
-    .order("nome")
+  return buscarTodas((de, ate) =>
+    supabase
+      .from("empresas")
+      .select("*")
+      .order("eh_sede", { ascending: false })
+      .order("nome")
+      .order("id")
+      .range(de, ate)
+  )
 }
 
 export function EmpresasPage() {

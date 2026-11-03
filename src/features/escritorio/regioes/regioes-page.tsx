@@ -26,17 +26,22 @@ import {
 import { GraficoCotovelo } from "@/features/escritorio/regioes/grafico-cotovelo"
 import { MapaRegioes } from "@/features/escritorio/regioes/mapa-regioes"
 import { avaliarKs } from "@/lib/kmeans"
+import { buscarTodas } from "@/lib/paginacao"
 import { supabase, type Tabela } from "@/lib/supabase"
 
 type Empresa = Tabela<"empresas"> & { latitude: number; longitude: number }
 
 async function buscar() {
   const [empresas, regioes] = await Promise.all([
-    supabase
-      .from("empresas")
-      .select("*")
-      .eq("ativo", true)
-      .not("latitude", "is", null),
+    buscarTodas((de, ate) =>
+      supabase
+        .from("empresas")
+        .select("*")
+        .eq("ativo", true)
+        .not("latitude", "is", null)
+        .order("id")
+        .range(de, ate)
+    ),
     supabase.from("regioes").select("criado_em").limit(1),
   ])
   return {

@@ -68,6 +68,7 @@ import {
   type Situacao,
 } from "@/lib/servicos"
 import { filtrarEmpresa, LIMITE_RESULTADOS } from "@/lib/busca"
+import { buscarTodas } from "@/lib/paginacao"
 import { supabase, type Tabela } from "@/lib/supabase"
 
 type Empresa = Tabela<"empresas"> & {
@@ -85,12 +86,16 @@ type ColetaForm = z.infer<typeof coletaSchema>
 
 async function buscarCadastros() {
   const [empresas, motoristas] = await Promise.all([
-    supabase
-      .from("empresas")
-      .select("*, regiao:regioes(id, nome, cor)")
-      .eq("ativo", true)
-      .eq("eh_sede", false)
-      .order("nome"),
+    buscarTodas((de, ate) =>
+      supabase
+        .from("empresas")
+        .select("*, regiao:regioes(id, nome, cor)")
+        .eq("ativo", true)
+        .eq("eh_sede", false)
+        .order("nome")
+        .order("id")
+        .range(de, ate)
+    ),
     supabase
       .from("funcionarios")
       .select("id, nome, veiculos(placa)")

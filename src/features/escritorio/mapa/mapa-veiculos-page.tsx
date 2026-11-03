@@ -23,6 +23,7 @@ import {
 } from "@/features/escritorio/mapa/mapa-frota"
 import { cn } from "@/lib/utils"
 import { hojeEmBrasilia, type ServicoSituacao } from "@/lib/servicos"
+import { buscarTodas } from "@/lib/paginacao"
 import { supabase, type Tabela } from "@/lib/supabase"
 
 type Empresa = Tabela<"empresas">
@@ -45,7 +46,9 @@ async function buscarFrota() {
     supabase.from("ultimas_localizacoes").select("*"),
     supabase.from("rotas").select("*").eq("data", hojeEmBrasilia()),
     supabase.from("servicos_situacao").select("*").eq("status", "em_rota"),
-    supabase.from("empresas").select("*"),
+    buscarTodas((de, ate) =>
+      supabase.from("empresas").select("*").order("id").range(de, ate)
+    ),
   ])
   return {
     motoristas: (motoristas.data ?? []).map((m) => ({
