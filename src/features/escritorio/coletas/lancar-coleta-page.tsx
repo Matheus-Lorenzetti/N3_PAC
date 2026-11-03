@@ -52,6 +52,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { EtiquetaRegiao } from "@/features/escritorio/regioes/etiqueta-regiao"
 import { Textarea } from "@/components/ui/textarea"
 import {
   formatarHora,
@@ -63,7 +64,9 @@ import {
 } from "@/lib/servicos"
 import { supabase, type Tabela } from "@/lib/supabase"
 
-type Empresa = Tabela<"empresas">
+type Empresa = Tabela<"empresas"> & {
+  regiao: { nome: string; cor: string } | null
+}
 type Motorista = { id: string; nome: string; placa: string | null }
 
 const coletaSchema = z.object({
@@ -78,7 +81,7 @@ async function buscarCadastros() {
   const [empresas, motoristas] = await Promise.all([
     supabase
       .from("empresas")
-      .select("*")
+      .select("*, regiao:regioes(nome, cor)")
       .eq("ativo", true)
       .eq("eh_sede", false)
       .order("nome"),
@@ -219,6 +222,7 @@ export function LancarColetaPage() {
                                 <span className="truncate text-xs text-muted-foreground">
                                   {empresa.endereco} · {empresa.cidade}
                                 </span>
+                                <EtiquetaRegiao regiao={empresa.regiao} />
                               </div>
                             </ComboboxItem>
                           )}

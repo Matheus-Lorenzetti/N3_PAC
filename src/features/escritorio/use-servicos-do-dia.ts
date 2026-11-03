@@ -3,7 +3,9 @@ import { useCallback, useEffect, useState } from "react"
 import { hojeEmBrasilia, type ServicoSituacao } from "@/lib/servicos"
 import { supabase, type Tabela } from "@/lib/supabase"
 
-type Empresa = Tabela<"empresas">
+type Empresa = Tabela<"empresas"> & {
+  regiao: { nome: string; cor: string } | null
+}
 
 // Tudo o que está aberto (de qualquer dia) + o que foi concluído hoje
 async function buscar() {
@@ -14,7 +16,7 @@ async function buscar() {
       .select("*")
       .or(`status.neq.realizada,concluido_em.gte.${inicioDoDia}`)
       .order("criado_em"),
-    supabase.from("empresas").select("*"),
+    supabase.from("empresas").select("*, regiao:regioes(nome, cor)"),
     supabase
       .from("funcionarios")
       .select("id, nome, veiculos(placa)")

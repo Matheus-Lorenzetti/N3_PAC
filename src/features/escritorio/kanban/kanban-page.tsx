@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { EtiquetaRegiao } from "@/features/escritorio/regioes/etiqueta-regiao"
 import {
   useServicosDoDia,
   type ServicosDoDia,
@@ -88,6 +89,7 @@ function Cartao({
       <span className="truncate text-xs text-muted-foreground">
         {empresa?.endereco}
       </span>
+      <EtiquetaRegiao regiao={empresa?.regiao} />
       <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
         <span>
           {motorista?.placa ?? motorista?.nome ?? "—"} · {horario}

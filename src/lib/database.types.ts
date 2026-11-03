@@ -25,17 +25,23 @@ export type Database = {
           Tables: {
             "empresas": {
                   Row: {
-                    "ativo": boolean,"bairro": string | null,"cep": string | null,"cidade": string,"cnpj": string | null,"criado_em": string,"eh_sede": boolean,"endereco": string,"id": number,"latitude": number | null,"longitude": number | null,"nome": string,"telefone": string | null,"uf": string
+                    "ativo": boolean,"bairro": string | null,"cep": string | null,"cidade": string,"cnpj": string | null,"criado_em": string,"eh_sede": boolean,"endereco": string,"id": number,"latitude": number | null,"longitude": number | null,"nome": string,"regiao_id": number | null,"telefone": string | null,"uf": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "ativo"?: boolean,"bairro"?: string | null,"cep"?: string | null,"cidade": string,"cnpj"?: string | null,"criado_em"?: string,"eh_sede"?: boolean,"endereco": string,"id"?: never,"latitude"?: number | null,"longitude"?: number | null,"nome": string,"telefone"?: string | null,"uf": string
+                    "ativo"?: boolean,"bairro"?: string | null,"cep"?: string | null,"cidade": string,"cnpj"?: string | null,"criado_em"?: string,"eh_sede"?: boolean,"endereco": string,"id"?: never,"latitude"?: number | null,"longitude"?: number | null,"nome": string,"regiao_id"?: number | null,"telefone"?: string | null,"uf": string
                   }
                   Update: {
-                    "ativo"?: boolean,"bairro"?: string | null,"cep"?: string | null,"cidade"?: string,"cnpj"?: string | null,"criado_em"?: string,"eh_sede"?: boolean,"endereco"?: string,"id"?: never,"latitude"?: number | null,"longitude"?: number | null,"nome"?: string,"telefone"?: string | null,"uf"?: string
+                    "ativo"?: boolean,"bairro"?: string | null,"cep"?: string | null,"cidade"?: string,"cnpj"?: string | null,"criado_em"?: string,"eh_sede"?: boolean,"endereco"?: string,"id"?: never,"latitude"?: number | null,"longitude"?: number | null,"nome"?: string,"regiao_id"?: number | null,"telefone"?: string | null,"uf"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "empresas_regiao_id_fkey"
+      columns: ["regiao_id"]
+isOneToOne: false
+      referencedRelation: "regioes"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"funcionarios": {
                   Row: {
@@ -70,6 +76,20 @@ isOneToOne: false
       referencedRelation: "funcionarios"
       referencedColumns: ["id"]
     }
+                  ]
+                },"regioes": {
+                  Row: {
+                    "cor": string,"criado_em": string,"id": number,"latitude": number,"longitude": number,"nome": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "cor": string,"criado_em"?: string,"id"?: never,"latitude": number,"longitude": number,"nome": string
+                  }
+                  Update: {
+                    "cor"?: string,"criado_em"?: string,"id"?: never,"latitude"?: number,"longitude"?: number,"nome"?: string
+                  }
+                  Relationships: [
+                    
                   ]
                 },"rotas": {
                   Row: {
@@ -253,7 +273,10 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "assumir_veiculo":
+            "aplicar_regioes":
+{ Args: { "p_regioes": Json }; Returns: number
+                           },
+"assumir_veiculo":
 { Args: { "p_placa": string }; Returns: {
               "criado_em": string,
 "id": number,
