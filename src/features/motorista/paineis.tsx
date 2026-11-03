@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/sheet"
 import type { ParadaOrdenada } from "@/features/motorista/motorista-page"
 import { formatarHora, type ServicoSituacao } from "@/lib/servicos"
+import { filtrarEmpresa, LIMITE_RESULTADOS } from "@/lib/busca"
 import type { Tabela } from "@/lib/supabase"
 
 type Empresa = Tabela<"empresas">
@@ -92,6 +93,8 @@ export function PainelRota({
                 value={busca}
                 onValueChange={(empresa: Empresa | null) => setBusca(empresa)}
                 itemToStringLabel={(empresa: Empresa) => empresa.nome}
+                filter={filtrarEmpresa}
+                limit={LIMITE_RESULTADOS}
               >
                 <ComboboxInput
                   id="nova-entrega"
@@ -99,7 +102,10 @@ export function PainelRota({
                   className="flex-1"
                 />
                 <ComboboxContent>
-                  <ComboboxEmpty>Nenhuma empresa encontrada.</ComboboxEmpty>
+                  <ComboboxEmpty>
+                          Nenhuma empresa encontrada. Tente parte do nome, a cidade
+                          ou o CNPJ.
+                        </ComboboxEmpty>
                   <ComboboxList>
                     {(empresa: Empresa) => (
                       <ComboboxItem key={empresa.id} value={empresa}>

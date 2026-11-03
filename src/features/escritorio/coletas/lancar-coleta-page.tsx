@@ -67,6 +67,7 @@ import {
   type ServicoSituacao,
   type Situacao,
 } from "@/lib/servicos"
+import { filtrarEmpresa, LIMITE_RESULTADOS } from "@/lib/busca"
 import { supabase, type Tabela } from "@/lib/supabase"
 
 type Empresa = Tabela<"empresas"> & {
@@ -283,6 +284,8 @@ export function LancarColetaPage() {
                         }
                       }}
                       itemToStringLabel={(empresa: Empresa) => empresa.nome}
+                      filter={filtrarEmpresa}
+                      limit={LIMITE_RESULTADOS}
                     >
                       <ComboboxInput
                         id="empresa"
