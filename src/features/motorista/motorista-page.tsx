@@ -108,6 +108,24 @@ function posicaoAtual(): Promise<GeolocationPosition | null> {
   })
 }
 
+// A navegação curva a curva fica com o app que o motorista preferir
+function linksNavegacao(destino: {
+  latitude: number | null
+  longitude: number | null
+}) {
+  const { latitude, longitude } = destino
+  return [
+    {
+      app: "Google Maps",
+      url: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`,
+    },
+    {
+      app: "Waze",
+      url: `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`,
+    },
+  ]
+}
+
 function minutos(segundos: number) {
   return `${Math.max(1, Math.round(segundos / 60))} min`
 }
@@ -444,21 +462,29 @@ export function MotoristaPage() {
             </CardContent>
             <CardFooter className="flex gap-2">
               {proxima.empresa?.latitude != null && (
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  render={
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${proxima.empresa.latitude},${proxima.empresa.longitude}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    />
-                  }
-                  nativeButton={false}
-                >
-                  <NavigationIcon data-icon="inline-start" />
-                  Navegar
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={<Button variant="outline" className="flex-1" />}
+                  >
+                    <NavigationIcon data-icon="inline-start" />
+                    Navegar
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" side="top">
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>Abrir no</DropdownMenuLabel>
+                      {linksNavegacao(proxima.empresa).map(({ app, url }) => (
+                        <DropdownMenuItem
+                          key={app}
+                          render={
+                            <a href={url} target="_blank" rel="noreferrer" />
+                          }
+                        >
+                          {app}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
               <Button
                 className="flex-1"
