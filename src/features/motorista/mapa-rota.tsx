@@ -4,7 +4,10 @@ import { useEffect, useRef } from "react"
 import type { Posicao } from "@/features/motorista/use-gps"
 import {
   adicionarCamadaRota,
+  COR_RESTO_ROTA,
+  COR_ROTA,
   criarMapa,
+  dividirNaParada,
   elementoMarcador,
   enquadrar,
   quandoPronto,
@@ -17,34 +20,54 @@ export type ParadaNoMapa = Ponto & {
   tipo: "coleta" | "entrega"
 }
 
-export function classeParada(tipo: "coleta" | "entrega") {
-  // Coleta = círculo, entrega = quadrado
-  return `flex size-7 items-center justify-center bg-primary text-xs font-bold text-primary-foreground shadow ring-2 ring-background ${
-    tipo === "coleta" ? "rounded-full" : "rounded-md"
-  }`
+// Coleta = círculo, entrega = quadrado; a próxima parada fica em destaque
+export function classeParada(tipo: "coleta" | "entrega", destaque = true) {
+  return [
+    "flex items-center justify-center text-xs font-bold shadow ring-2 ring-background",
+    tipo === "coleta" ? "rounded-full" : "rounded-md",
+    destaque
+      ? "size-8 bg-primary text-primary-foreground"
+      : "size-6 bg-muted text-muted-foreground",
+  ].join(" ")
 }
+
+const ZOOM_SEGUINDO = 16
+// Espaço embaixo para o cartão da próxima parada
+const MARGEM = { top: 80, left: 40, right: 40, bottom: 220 }
 
 export function MapaRota({
   sede,
   paradas,
   linha,
   posicao,
+  seguir,
+  onDeixarDeSeguir,
 }: {
   sede: Ponto
   paradas: ParadaNoMapa[]
   linha: [number, number][]
   posicao: Posicao | null
+  // true = câmera acompanha o motorista; false = mostra a rota toda
+  seguir: boolean
+  onDeixarDeSeguir: () => void
 }) {
   const container = useRef<HTMLDivElement>(null)
   const mapa = useRef<MapaLibre | null>(null)
   const marcadoresParadas = useRef<Marker[]>([])
   const marcadorPosicao = useRef<Marker | null>(null)
+  const deixarDeSeguir = useRef(onDeixarDeSeguir)
+
+  useEffect(() => {
+    deixarDeSeguir.current = onDeixarDeSeguir
+  }, [onDeixarDeSeguir])
 
   // Cria o mapa uma vez, centrado na sede
   const { latitude, longitude } = sede
   useEffect(() => {
     const instancia = criarMapa(container.current!, { latitude, longitude })
     instancia.on("load", () => adicionarCamadaRota(instancia, "rota"))
+    // Arrastar o mapa com o dedo sai do modo seguir
+    instancia.on("dragstart", () => deixarDeSeguir.current())
     mapa.current = instancia
     return () => {
       instancia.remove()
@@ -54,37 +77,60 @@ export function MapaRota({
     }
   }, [latitude, longitude])
 
-  // Linha da rota e enquadramento quando a rota muda
+  // Trecho até a próxima parada em azul forte; o resto em cinza fino
+  const proxima = paradas[0]
   useEffect(() => {
     const instancia = mapa.current
     if (!instancia) return
+    const [atual, resto] = proxima
+      ? dividirNaParada(linha, proxima)
+      : [[], linha]
     quandoPronto(instancia, "rota", () => {
       instancia.getSource<GeoJSONSource>("rota")?.setData({
         type: "FeatureCollection",
-        features: linha.length
-          ? [
-              {
-                type: "Feature",
-                properties: {},
-                geometry: { type: "LineString", coordinates: linha },
-              },
-            ]
-          : [],
+        // O resto vem primeiro para ficar por baixo do trecho atual
+        features: [
+          { coordenadas: resto, cor: COR_RESTO_ROTA, largura: 3 },
+          { coordenadas: atual, cor: COR_ROTA, largura: 6 },
+        ]
+          .filter((t) => t.coordenadas.length > 1)
+          .map((t) => ({
+            type: "Feature",
+            properties: { cor: t.cor, largura: t.largura },
+            geometry: { type: "LineString", coordinates: t.coordenadas },
+          })),
       })
-      // Espaço extra embaixo para o cartão da próxima parada
-      enquadrar(instancia, linha, { top: 80, left: 40, right: 40, bottom: 200 })
     })
-  }, [linha])
+  }, [linha, proxima])
+
+  // Visão geral: enquadra a rota toda quando ela muda ou ao sair do modo seguir
+  useEffect(() => {
+    const instancia = mapa.current
+    if (!instancia || seguir) return
+    quandoPronto(instancia, "rota", () => enquadrar(instancia, linha, MARGEM))
+  }, [linha, seguir])
+
+  // Modo seguir: a câmera acompanha cada posição nova
+  useEffect(() => {
+    const instancia = mapa.current
+    if (!instancia || !seguir || !posicao) return
+    instancia.easeTo({
+      center: [posicao.longitude, posicao.latitude],
+      zoom: Math.max(instancia.getZoom(), ZOOM_SEGUINDO),
+      padding: { top: 0, left: 0, right: 0, bottom: MARGEM.bottom },
+      duration: 800,
+    })
+  }, [posicao, seguir])
 
   // Marcadores numerados na ordem de visita
   useEffect(() => {
     const instancia = mapa.current
     if (!instancia) return
     marcadoresParadas.current.forEach((m) => m.remove())
-    marcadoresParadas.current = paradas.map((parada) =>
+    marcadoresParadas.current = paradas.map((parada, i) =>
       new Marker({
         element: elementoMarcador(
-          classeParada(parada.tipo),
+          classeParada(parada.tipo, i === 0),
           String(parada.numero)
         ),
       })

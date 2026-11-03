@@ -127,7 +127,7 @@ export function MapaFrota({
     marcadoresParadas.current = (paradasSelecionado ?? []).map((parada) =>
       new Marker({
         element: elementoMarcador(
-          classeParada(parada.tipo),
+          classeParada(parada.tipo, parada.numero === 1),
           String(parada.numero)
         ),
       })

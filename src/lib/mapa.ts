@@ -5,6 +5,7 @@ import {
   Map as MapaLibre,
   Marker,
   setWorkerUrl,
+  type ExpressionSpecification,
 } from "maplibre-gl"
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url"
 
@@ -44,8 +45,12 @@ export function criarMapa(container: HTMLElement, sede: Ponto) {
   return mapa
 }
 
-// Fonte GeoJSON + linha com contorno branco, para ler bem sobre o mapa
+export const COR_RESTO_ROTA = "#9ca3af"
+
+// Fonte GeoJSON + linha com contorno branco, para ler bem sobre o mapa.
+// Cada trecho pode trazer "cor" e "largura" nas propriedades.
 export function adicionarCamadaRota(mapa: MapaLibre, id: string) {
+  const largura: ExpressionSpecification = ["coalesce", ["get", "largura"], 5]
   mapa.addSource(id, {
     type: "geojson",
     data: { type: "FeatureCollection", features: [] },
@@ -55,7 +60,7 @@ export function adicionarCamadaRota(mapa: MapaLibre, id: string) {
     type: "line",
     source: id,
     layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": "#ffffff", "line-width": 9 },
+    paint: { "line-color": "#ffffff", "line-width": ["+", largura, 4] },
   })
   mapa.addLayer({
     id,
@@ -64,9 +69,27 @@ export function adicionarCamadaRota(mapa: MapaLibre, id: string) {
     layout: { "line-cap": "round", "line-join": "round" },
     paint: {
       "line-color": ["coalesce", ["get", "cor"], COR_ROTA],
-      "line-width": 5,
+      "line-width": largura,
     },
   })
+}
+
+// Divide o traçado no ponto mais próximo da parada: [até a parada, depois dela]
+export function dividirNaParada(
+  linha: [number, number][],
+  parada: Ponto
+): [[number, number][], [number, number][]] {
+  if (!linha.length) return [[], []]
+  let indice = 0
+  let menor = Infinity
+  linha.forEach(([lon, lat], i) => {
+    const d = (lon - parada.longitude) ** 2 + (lat - parada.latitude) ** 2
+    if (d < menor) {
+      menor = d
+      indice = i
+    }
+  })
+  return [linha.slice(0, indice + 1), linha.slice(indice)]
 }
 
 // Roda agora se a camada já existe; senão, logo depois do "load" que a cria

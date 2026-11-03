@@ -2,10 +2,12 @@ import {
   CheckIcon,
   ListOrderedIcon,
   LogOutIcon,
+  LocateFixedIcon,
   MenuIcon,
   NavigationIcon,
   PackageIcon,
   PlayIcon,
+  RouteIcon,
 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
@@ -108,22 +110,13 @@ function posicaoAtual(): Promise<GeolocationPosition | null> {
   })
 }
 
-// A navegação curva a curva fica com o app que o motorista preferir
-function linksNavegacao(destino: {
+// Navegação curva a curva fica com o Waze (voz, radares e lombadas);
+// ele segue falando em segundo plano enquanto o nosso app manda o GPS
+function linkWaze(destino: {
   latitude: number | null
   longitude: number | null
 }) {
-  const { latitude, longitude } = destino
-  return [
-    {
-      app: "Google Maps",
-      url: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`,
-    },
-    {
-      app: "Waze",
-      url: `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`,
-    },
-  ]
+  return `https://waze.com/ul?ll=${destino.latitude},${destino.longitude}&navigate=yes`
 }
 
 function minutos(segundos: number) {
@@ -141,6 +134,8 @@ export function MotoristaPage() {
   const [alerta, setAlerta] = useState<ColetaRecebida | null>(null)
   const [ocupado, setOcupado] = useState(false)
   const [painel, setPainel] = useState<"rota" | "coletas" | null>(null)
+  // Câmera acompanha o motorista; arrastar o mapa desliga
+  const [seguir, setSeguir] = useState(true)
   const { posicao, erro: erroGps } = useGps(iniciado)
   const posicaoRef = useRef(posicao)
 
@@ -393,6 +388,8 @@ export function MotoristaPage() {
           paradas={marcadores}
           linha={rotaAtual?.linha ?? []}
           posicao={posicao}
+          seguir={seguir && !!posicao}
+          onDeixarDeSeguir={() => setSeguir(false)}
         />
       )}
 
@@ -444,6 +441,26 @@ export function MotoristaPage() {
 
       {/* Base: próxima parada e botões */}
       <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-3">
+        {iniciado && posicao && (
+          <Button
+            variant="secondary"
+            size="lg"
+            className="self-end shadow"
+            onClick={() => setSeguir((atual) => !atual)}
+          >
+            {seguir ? (
+              <>
+                <RouteIcon data-icon="inline-start" />
+                Ver rota toda
+              </>
+            ) : (
+              <>
+                <LocateFixedIcon data-icon="inline-start" />
+                Seguir
+              </>
+            )}
+          </Button>
+        )}
         {iniciado && proxima && (
           <Card size="sm" className="shadow-lg">
             <CardHeader>
@@ -462,29 +479,21 @@ export function MotoristaPage() {
             </CardContent>
             <CardFooter className="flex gap-2">
               {proxima.empresa?.latitude != null && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={<Button variant="outline" className="flex-1" />}
-                  >
-                    <NavigationIcon data-icon="inline-start" />
-                    Navegar
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" side="top">
-                    <DropdownMenuGroup>
-                      <DropdownMenuLabel>Abrir no</DropdownMenuLabel>
-                      {linksNavegacao(proxima.empresa).map(({ app, url }) => (
-                        <DropdownMenuItem
-                          key={app}
-                          render={
-                            <a href={url} target="_blank" rel="noreferrer" />
-                          }
-                        >
-                          {app}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  render={
+                    <a
+                      href={linkWaze(proxima.empresa)}
+                      target="_blank"
+                      rel="noreferrer"
+                    />
+                  }
+                  nativeButton={false}
+                >
+                  <NavigationIcon data-icon="inline-start" />
+                  Navegar
+                </Button>
               )}
               <Button
                 className="flex-1"
