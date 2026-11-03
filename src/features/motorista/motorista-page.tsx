@@ -154,6 +154,14 @@ export function MotoristaPage() {
     buscarDados().then(setDados)
   }, [])
 
+  // Ids dos serviços na tela, para reconhecer uma exclusão pelo Realtime
+  const idsDosServicos = useRef(new Set<number>())
+  useEffect(() => {
+    idsDosServicos.current = new Set(
+      (dados?.servicos ?? []).map((servico) => servico.id!)
+    )
+  }, [dados])
+
   // Avisos do escritório em tempo real
   useEffect(() => {
     if (!iniciado || !funcionario) return
@@ -191,6 +199,16 @@ export function MotoristaPage() {
                   })
                 : null,
           })
+        }
+      )
+      // Exclusão (lixeira do Kanban): o Realtime não filtra DELETE por
+      // motorista e só manda o id, então recarrega se era um serviço nosso
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "servicos" },
+        ({ old }) => {
+          if (idsDosServicos.current.has((old as { id?: number }).id ?? -1))
+            atualizar()
         }
       )
       .subscribe()
