@@ -83,6 +83,30 @@ function lerOrdemManual(motoristaId: string): number[] | null {
   }
 }
 
+// Encaixa a parada onde ela menos alonga o caminho (a rota termina na sede)
+function inserirNoMelhorLugar<P extends Ponto>(
+  ordem: P[],
+  nova: P,
+  sede: Ponto
+) {
+  let melhor = ordem.length
+  let menorAcrescimo = Infinity
+  for (let i = 0; i <= ordem.length; i++) {
+    const depois = ordem[i] ?? sede
+    const antes = ordem[i - 1]
+    const acrescimo = antes
+      ? distanciaKm(antes, nova) +
+        distanciaKm(nova, depois) -
+        distanciaKm(antes, depois)
+      : distanciaKm(nova, depois)
+    if (acrescimo < menorAcrescimo) {
+      menorAcrescimo = acrescimo
+      melhor = i
+    }
+  }
+  ordem.splice(melhor, 0, nova)
+}
+
 async function buscarDados() {
   const [servicos, empresas, veiculo, ultima] = await Promise.all([
     // A RLS já devolve só os serviços deste motorista
@@ -183,8 +207,8 @@ export function MotoristaPage() {
     (RotaOtimizada & { chave: string; otimizada: boolean }) | null
   >(null)
   const [erroRota, setErroRota] = useState<string | null>(null)
-  // null = segue a ordem sugerida (otimizada)
-  const [ordemManual, setOrdemManual] = useState<number[] | null>(() =>
+  // Ordem que o motorista montou com as setas; null = segue a sugerida
+  const [ordemSalva, setOrdemSalva] = useState<number[] | null>(() =>
     funcionario ? lerOrdemManual(funcionario.id) : null
   )
   const [alerta, setAlerta] = useState<ColetaRecebida | null>(null)
@@ -273,10 +297,13 @@ export function MotoristaPage() {
     }
   }, [iniciado, funcionario, atualizar])
 
-  const sede: Ponto | null =
-    dados?.sede?.latitude != null && dados.sede.longitude != null
-      ? { latitude: dados.sede.latitude, longitude: dados.sede.longitude }
-      : null
+  const sede: Ponto | null = useMemo(
+    () =>
+      dados?.sede?.latitude != null && dados.sede.longitude != null
+        ? { latitude: dados.sede.latitude, longitude: dados.sede.longitude }
+        : null,
+    [dados?.sede?.latitude, dados?.sede?.longitude]
+  )
 
   // Paradas que entram no cálculo: em rota e com localização
   const paradasNoMapa = useMemo(() => {
@@ -300,15 +327,25 @@ export function MotoristaPage() {
     })
   }, [dados])
 
-  // Com ordem manual, as paradas seguem a ordem do motorista; as novas vão
-  // para o fim e as concluídas ou tiradas simplesmente saem
+  // Ordem manual em vigor: as concluídas ou tiradas saem e as novas entram no
+  // ponto mais perto do caminho. Se nenhuma parada que ele ordenou sobrou,
+  // volta para a rota otimizada (null)
+  const ordemManual = useMemo(() => {
+    if (!ordemSalva || !sede) return null
+    const porId = new Map(paradasNoMapa.map((p) => [p.id, p]))
+    const ordem = ordemSalva.flatMap((id) => porId.get(id) ?? [])
+    if (!ordem.length) return null
+    const salvas = new Set(ordemSalva)
+    for (const nova of paradasNoMapa.filter((p) => !salvas.has(p.id))) {
+      inserirNoMelhorLugar(ordem, nova, sede)
+    }
+    return ordem.map((p) => p.id)
+  }, [ordemSalva, paradasNoMapa, sede])
+
   const paradasEmOrdem = useMemo(() => {
     if (!ordemManual) return paradasNoMapa
-    const lugar = new Map(ordemManual.map((id, i) => [id, i]))
-    const fim = Number.MAX_SAFE_INTEGER
-    return [...paradasNoMapa].sort(
-      (a, b) => (lugar.get(a.id) ?? fim) - (lugar.get(b.id) ?? fim)
-    )
+    const porId = new Map(paradasNoMapa.map((p) => [p.id, p]))
+    return ordemManual.map((id) => porId.get(id)!)
   }, [paradasNoMapa, ordemManual])
 
   // Sugerida: muda só com o conjunto de paradas. Manual: muda também com a ordem
@@ -460,7 +497,7 @@ export function MotoristaPage() {
   }
 
   function definirOrdemManual(ordem: number[] | null) {
-    setOrdemManual(ordem)
+    setOrdemSalva(ordem)
     if (!funcionario) return
     const chave = chaveOrdemManual(funcionario.id)
     if (ordem) localStorage.setItem(chave, JSON.stringify(ordem))
