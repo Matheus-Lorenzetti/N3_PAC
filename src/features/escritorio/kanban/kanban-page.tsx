@@ -68,6 +68,14 @@ function mudancaPara(destino: Situacao) {
   return { status: "pendente" as const, aceito_em: null, concluido_em: null }
 }
 
+// Por que ficou pendente, pelo que já está gravado (o motorista não informa):
+// aceito_em preenchido = aceitou e depois tirou da rota
+function motivoPendente(servico: ServicoSituacao) {
+  return servico.aceito_em
+    ? "Motorista tirou da rota"
+    : "Motorista não adicionou à rota"
+}
+
 function Cartao({
   servico,
   dados,
@@ -113,6 +121,11 @@ function Cartao({
           <Badge variant="destructive">Atrasado</Badge>
         )}
       </div>
+      {servico.situacao === "pendente" && (
+        <span className="text-xs font-medium text-destructive">
+          {motivoPendente(servico)}
+        </span>
+      )}
     </div>
   )
 }
