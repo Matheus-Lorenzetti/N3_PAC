@@ -79,7 +79,7 @@ function lerOrdemManual(motoristaId: string): number[] | null {
 }
 
 async function buscarDados() {
-  const [servicos, empresas, veiculo] = await Promise.all([
+  const [servicos, empresas, veiculo, ultima] = await Promise.all([
     // A RLS já devolve só os serviços deste motorista
     supabase
       .from("servicos_situacao")
@@ -97,15 +97,31 @@ async function buscarDados() {
     ),
     // Veículo que o motorista assumiu no login
     supabase.from("veiculos").select("placa").maybeSingle(),
+    // Última posição enviada (a RLS devolve só a deste motorista)
+    supabase
+      .from("ultimas_localizacoes")
+      .select("latitude, longitude, registrado_em")
+      .maybeSingle(),
   ])
   const lista = empresas.data ?? []
+  const recente =
+    ultima.data?.registrado_em &&
+    Date.now() - new Date(ultima.data.registrado_em).getTime() < UMA_HORA
   return {
     servicos: servicos.data ?? [],
     empresas: new Map(lista.map((e) => [e.id, e])),
     sede: lista.find((e) => e.eh_sede) ?? null,
     placa: veiculo.data?.placa ?? null,
+    ultimaPosicao:
+      recente && ultima.data?.latitude != null && ultima.data.longitude != null
+        ? { latitude: ultima.data.latitude, longitude: ultima.data.longitude }
+        : null,
   }
 }
+
+const UMA_HORA = 60 * 60 * 1000
+// Quanto o cálculo da rota espera pelo primeiro sinal do GPS
+const ESPERA_GPS_MS = 8000
 
 type Dados = Awaited<ReturnType<typeof buscarDados>>
 
@@ -173,6 +189,18 @@ export function MotoristaPage() {
   const [seguir, setSeguir] = useState(true)
   const { posicao, erro: erroGps } = useGps(iniciado)
   const posicaoRef = useRef(posicao)
+  // A rota só é calculada com o 1º sinal do GPS ou depois de esperar por ele
+  const [desistiuDoGps, setDesistiuDoGps] = useState(false)
+  const gpsPronto = !!posicao || desistiuDoGps
+
+  useEffect(() => {
+    if (!iniciado) return
+    const espera = window.setTimeout(
+      () => setDesistiuDoGps(true),
+      ESPERA_GPS_MS
+    )
+    return () => window.clearTimeout(espera)
+  }, [iniciado])
 
   useEffect(() => {
     posicaoRef.current = posicao
@@ -300,14 +328,15 @@ export function MotoristaPage() {
 
   // Recalcula só quando muda a chave (aceitou, concluiu, adicionou, reordenou)
   useEffect(() => {
-    if (!iniciado || !sede) return
+    if (!iniciado || !sede || !gpsPronto) return
     if (!paradasNoMapa.length) {
       // Sem paradas: limpa a rota que o escritório vê
       gravarRota({ ordem: [], linha: [], distanciaM: 0, duracaoSeg: 0 })
       return
     }
-    // Começa de onde o motorista está; termina sempre na sede
-    const inicio = posicaoRef.current ?? sede
+    // Começa de onde o motorista está (GPS do aparelho ou a última posição
+    // enviada, se for da última hora); termina sempre na sede
+    const inicio = posicaoRef.current ?? dados?.ultimaPosicao ?? sede
     const pedido = { inicio, fim: sede, paradas: paradasEmOrdem }
     let otimizada = !ordemManual
     otimizarRota({ ...pedido, fixa: !!ordemManual })
@@ -330,7 +359,7 @@ export function MotoristaPage() {
       .catch((erro: Error) => setErroRota(erro.message))
     // paradasEmOrdem e ordemManual mudam junto com chaveRota
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [iniciado, chaveRota, sede?.latitude, sede?.longitude])
+  }, [iniciado, gpsPronto, chaveRota, sede?.latitude, sede?.longitude])
 
   const rotaAtual = chaveRota && rota?.chave === chaveRota ? rota : null
   const calculando = !!chaveRota && iniciado && !rotaAtual && !erroRota
