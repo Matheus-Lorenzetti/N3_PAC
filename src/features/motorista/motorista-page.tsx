@@ -342,6 +342,15 @@ export function MotoristaPage() {
     return ordem.map((p) => p.id)
   }, [ordemSalva, paradasNoMapa, sede])
 
+  // Guarda a ordem em vigor: quem saiu da rota é esquecido e, se voltar,
+  // entra de novo no melhor lugar (e não na posição antiga)
+  useEffect(() => {
+    if (!dados || !ordemSalva) return
+    if ((ordemManual ?? []).join(",") === ordemSalva.join(",")) return
+    definirOrdemManual(ordemManual)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dados, ordemManual])
+
   const paradasEmOrdem = useMemo(() => {
     if (!ordemManual) return paradasNoMapa
     const porId = new Map(paradasNoMapa.map((p) => [p.id, p]))
