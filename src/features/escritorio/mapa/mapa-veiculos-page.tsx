@@ -22,6 +22,7 @@ import {
   type VeiculoNoMapa,
 } from "@/features/escritorio/mapa/mapa-frota"
 import { cn } from "@/lib/utils"
+import { rotaDaPosicao } from "@/lib/mapa"
 import { hojeEmBrasilia, type ServicoSituacao } from "@/lib/servicos"
 import { buscarTodas } from "@/lib/paginacao"
 import { supabase, type Tabela } from "@/lib/supabase"
@@ -154,31 +155,38 @@ export function MapaVeiculosPage() {
         servico,
         empresa: frota.empresas.get(servico.empresa_id!),
       }))
+      const paradas = paradasNomes.flatMap(({ servico, empresa }, n) =>
+        empresa?.latitude != null && empresa.longitude != null
+          ? [
+              {
+                id: servico.id!,
+                numero: n + 1,
+                tipo: servico.tipo!,
+                latitude: empresa.latitude,
+                longitude: empresa.longitude,
+              },
+            ]
+          : []
+      )
+      const ponto = posicao
+        ? { latitude: posicao.latitude, longitude: posicao.longitude }
+        : null
       return {
         motoristaId: motorista.id,
         placa: motorista.placa,
         nome: motorista.nome,
         cor: CORES[i % CORES.length],
-        posicao: posicao
-          ? { latitude: posicao.latitude, longitude: posicao.longitude }
-          : null,
+        posicao: ponto,
         atualizadoEm: posicao?.registrado_em ?? null,
-        linha: (rota?.linha as [number, number][] | undefined) ?? [],
+        // Em tempo real: a linha sai da placa (o que ficou para trás some)
+        linha: rotaDaPosicao(
+          (rota?.linha as [number, number][] | undefined) ?? [],
+          ponto,
+          paradas[0] ?? null
+        ).linha,
         distanciaM: rota?.distancia_m ?? 0,
         paradasNomes,
-        paradas: paradasNomes.flatMap(({ servico, empresa }, n) =>
-          empresa?.latitude != null && empresa.longitude != null
-            ? [
-                {
-                  id: servico.id!,
-                  numero: n + 1,
-                  tipo: servico.tipo!,
-                  latitude: empresa.latitude,
-                  longitude: empresa.longitude,
-                },
-              ]
-            : []
-        ),
+        paradas,
       }
     })
   }, [frota])

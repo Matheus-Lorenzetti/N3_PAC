@@ -45,6 +45,7 @@ import {
 } from "@/features/motorista/nova-coleta-alerta"
 import { PainelColetas, PainelRota } from "@/features/motorista/paineis"
 import { useGps } from "@/features/motorista/use-gps"
+import { rotaDaPosicao } from "@/lib/mapa"
 import { otimizarRota, type Ponto, type RotaOtimizada } from "@/lib/ors"
 import {
   distanciaKm,
@@ -122,8 +123,10 @@ async function buscarDados() {
   }
 }
 
-// Quanto o cálculo da rota espera pelo primeiro sinal do GPS
-const ESPERA_GPS_MS = 8000
+// Mais longe que isso da linha = saiu do caminho; refaz o traçado
+const DESVIO_MAXIMO_M = 300
+// Intervalo mínimo entre dois refazimentos por desvio (poupa a cota)
+const INTERVALO_DESVIO_MS = 2 * 60 * 1000
 
 type Dados = Awaited<ReturnType<typeof buscarDados>>
 
@@ -191,18 +194,8 @@ export function MotoristaPage() {
   const [seguir, setSeguir] = useState(true)
   const { posicao, erro: erroGps } = useGps(iniciado)
   const posicaoRef = useRef(posicao)
-  // A rota só é calculada com o 1º sinal do GPS ou depois de esperar por ele
-  const [desistiuDoGps, setDesistiuDoGps] = useState(false)
-  const gpsPronto = !!posicao || desistiuDoGps
-
-  useEffect(() => {
-    if (!iniciado) return
-    const espera = window.setTimeout(
-      () => setDesistiuDoGps(true),
-      ESPERA_GPS_MS
-    )
-    return () => window.clearTimeout(espera)
-  }, [iniciado])
+  // Quando a rota foi refeita por desvio pela última vez
+  const ultimoDesvio = useRef(0)
 
   useEffect(() => {
     posicaoRef.current = posicao
@@ -328,23 +321,27 @@ export function MotoristaPage() {
           .sort((a, b) => a - b)
           .join(",")
 
-  // Recalcula só quando muda a chave (aceitou, concluiu, adicionou, reordenou)
-  useEffect(() => {
-    if (!iniciado || !sede || !gpsPronto) return
-    if (!paradasNoMapa.length) {
-      // Sem paradas: limpa a rota que o escritório vê
-      gravarRota({ ordem: [], linha: [], distanciaM: 0, duracaoSeg: 0 })
-      return
-    }
-    // Começa de onde o motorista está (GPS do aparelho ou a última posição
-    // enviada hoje, onde a placa aparece no mapa); termina sempre na sede
+  // Calcula a rota saindo de onde o motorista está (GPS do aparelho ou a última
+  // posição enviada hoje, onde a placa aparece no mapa); termina na sede.
+  // porDesvio: ele saiu do caminho; refaz só o traçado, mantendo a ordem atual
+  function calcularRota(porDesvio = false) {
+    if (!sede) return
     const inicio = posicaoRef.current ?? dados?.ultimaPosicao ?? sede
-    const pedido = { inicio, fim: sede, paradas: paradasEmOrdem }
-    let otimizada = !ordemManual
-    otimizarRota({ ...pedido, fixa: !!ordemManual })
+    const ordemAtual = new Map(rota?.ordem.map((o, i) => [o.id, i]) ?? [])
+    const fim = Number.MAX_SAFE_INTEGER
+    const paradas = porDesvio
+      ? [...paradasEmOrdem].sort(
+          (a, b) =>
+            (ordemAtual.get(a.id) ?? fim) - (ordemAtual.get(b.id) ?? fim)
+        )
+      : paradasEmOrdem
+    const pedido = { inicio, fim: sede, paradas }
+    const fixa = !!ordemManual || porDesvio
+    let otimizada = porDesvio ? !!rota?.otimizada : !ordemManual
+    otimizarRota({ ...pedido, fixa })
       // Sem cota de otimização (ou ORS fora): traça na ordem atual mesmo assim
       .catch(() => {
-        if (ordemManual) throw new Error("Não foi possível traçar a rota agora")
+        if (fixa) throw new Error("Não foi possível traçar a rota agora")
         otimizada = false
         return otimizarRota({ ...pedido, fixa: true })
       })
@@ -359,9 +356,20 @@ export function MotoristaPage() {
         })
       })
       .catch((erro: Error) => setErroRota(erro.message))
+  }
+
+  // Recalcula quando muda a chave (aceitou, concluiu, adicionou, reordenou)
+  useEffect(() => {
+    if (!iniciado || !sede) return
+    if (!paradasNoMapa.length) {
+      // Sem paradas: limpa a rota que o escritório vê
+      gravarRota({ ordem: [], linha: [], distanciaM: 0, duracaoSeg: 0 })
+      return
+    }
+    calcularRota()
     // paradasEmOrdem e ordemManual mudam junto com chaveRota
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [iniciado, gpsPronto, chaveRota, sede?.latitude, sede?.longitude])
+  }, [iniciado, chaveRota, sede?.latitude, sede?.longitude])
 
   const rotaAtual = chaveRota && rota?.chave === chaveRota ? rota : null
   const calculando = !!chaveRota && iniciado && !rotaAtual && !erroRota
@@ -417,6 +425,23 @@ export function MotoristaPage() {
       ),
     [ordenadas]
   )
+
+  // Distância até a rota (o mapa desenha a linha saindo da posição atual)
+  const restante = useMemo(
+    () => rotaDaPosicao(rotaAtual?.linha ?? [], posicao, marcadores[0] ?? null),
+    [rotaAtual, posicao, marcadores]
+  )
+
+  // Saiu do caminho: refaz o traçado a partir de onde está (no máximo a cada
+  // 2 min, para não gastar a cota)
+  useEffect(() => {
+    if (!iniciado || !rotaAtual || restante.desvioM < DESVIO_MAXIMO_M) return
+    if (Date.now() - ultimoDesvio.current < INTERVALO_DESVIO_MS) return
+    ultimoDesvio.current = Date.now()
+    calcularRota(true)
+    // calcularRota lê o estado atual; só a posição nova dispara a checagem
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restante.desvioM])
 
   const aguardando = (dados?.servicos ?? []).filter(
     (s) => s.situacao === "aguardando"

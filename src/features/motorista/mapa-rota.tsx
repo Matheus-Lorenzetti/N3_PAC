@@ -11,6 +11,7 @@ import {
   elementoMarcador,
   enquadrar,
   quandoPronto,
+  rotaDaPosicao,
 } from "@/lib/mapa"
 import type { Ponto } from "@/lib/ors"
 
@@ -77,14 +78,16 @@ export function MapaRota({
     }
   }, [latitude, longitude])
 
-  // Trecho até a próxima parada em azul forte; o resto em cinza fino
+  // Trecho até a próxima parada em azul forte; o resto em cinza fino.
+  // Em tempo real: a linha sai da posição atual (o que ficou para trás some)
   const proxima = paradas[0]
   useEffect(() => {
     const instancia = mapa.current
     if (!instancia) return
+    const visivel = rotaDaPosicao(linha, posicao, proxima ?? null).linha
     const [atual, resto] = proxima
-      ? dividirNaParada(linha, proxima)
-      : [[], linha]
+      ? dividirNaParada(visivel, proxima)
+      : [[], visivel]
     quandoPronto(instancia, "rota", () => {
       instancia.getSource<GeoJSONSource>("rota")?.setData({
         type: "FeatureCollection",
@@ -101,7 +104,7 @@ export function MapaRota({
           })),
       })
     })
-  }, [linha, proxima])
+  }, [linha, proxima, posicao])
 
   // Visão geral: enquadra a rota toda quando ela muda ou ao sair do modo seguir
   useEffect(() => {
