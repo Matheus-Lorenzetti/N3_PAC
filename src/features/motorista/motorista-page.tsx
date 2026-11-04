@@ -46,7 +46,11 @@ import {
 import { PainelColetas, PainelRota } from "@/features/motorista/paineis"
 import { useGps } from "@/features/motorista/use-gps"
 import { otimizarRota, type Ponto, type RotaOtimizada } from "@/lib/ors"
-import { distanciaKm, type ServicoSituacao } from "@/lib/servicos"
+import {
+  distanciaKm,
+  hojeEmBrasilia,
+  type ServicoSituacao,
+} from "@/lib/servicos"
 import { buscarTodas } from "@/lib/paginacao"
 import { supabase, type Tabela } from "@/lib/supabase"
 
@@ -97,29 +101,27 @@ async function buscarDados() {
     ),
     // Veículo que o motorista assumiu no login
     supabase.from("veiculos").select("placa").maybeSingle(),
-    // Última posição enviada (a RLS devolve só a deste motorista)
+    // Última posição enviada hoje, a mesma da placa no mapa do escritório
+    // (a RLS devolve só a deste motorista)
     supabase
       .from("ultimas_localizacoes")
-      .select("latitude, longitude, registrado_em")
+      .select("latitude, longitude")
+      .gte("registrado_em", `${hojeEmBrasilia()}T00:00:00-03:00`)
       .maybeSingle(),
   ])
   const lista = empresas.data ?? []
-  const recente =
-    ultima.data?.registrado_em &&
-    Date.now() - new Date(ultima.data.registrado_em).getTime() < UMA_HORA
   return {
     servicos: servicos.data ?? [],
     empresas: new Map(lista.map((e) => [e.id, e])),
     sede: lista.find((e) => e.eh_sede) ?? null,
     placa: veiculo.data?.placa ?? null,
     ultimaPosicao:
-      recente && ultima.data?.latitude != null && ultima.data.longitude != null
+      ultima.data?.latitude != null && ultima.data.longitude != null
         ? { latitude: ultima.data.latitude, longitude: ultima.data.longitude }
         : null,
   }
 }
 
-const UMA_HORA = 60 * 60 * 1000
 // Quanto o cálculo da rota espera pelo primeiro sinal do GPS
 const ESPERA_GPS_MS = 8000
 
@@ -335,7 +337,7 @@ export function MotoristaPage() {
       return
     }
     // Começa de onde o motorista está (GPS do aparelho ou a última posição
-    // enviada, se for da última hora); termina sempre na sede
+    // enviada hoje, onde a placa aparece no mapa); termina sempre na sede
     const inicio = posicaoRef.current ?? dados?.ultimaPosicao ?? sede
     const pedido = { inicio, fim: sede, paradas: paradasEmOrdem }
     let otimizada = !ordemManual
