@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { FiltroServicosBarra } from "@/features/escritorio/filtro-servicos"
 import { PorRegiao } from "@/features/escritorio/dashboard/por-regiao"
 import { useServicosDoDia } from "@/features/escritorio/use-servicos-do-dia"
 import {
@@ -82,7 +83,9 @@ function CardNumero({
 }
 
 export function DashboardPage() {
-  const { dados } = useServicosDoDia("escritorio-dashboard")
+  const { dados, filtro, setFiltro, opcoes } = useServicosDoDia(
+    "escritorio-dashboard"
+  )
 
   const coletas = useMemo(
     () => contar(dados?.servicos ?? [], "coleta"),
@@ -125,6 +128,12 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <FiltroServicosBarra
+        filtro={filtro}
+        onMudar={setFiltro}
+        opcoes={opcoes}
+      />
+
       {atrasados.length > 0 && (
         <Alert variant="destructive">
           <TriangleAlertIcon />

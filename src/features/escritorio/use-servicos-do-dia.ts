@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { hojeEmBrasilia, type ServicoSituacao } from "@/lib/servicos"
 import { buscarTodas } from "@/lib/paginacao"
@@ -49,16 +49,39 @@ export type ServicosDoDia = {
   erro: string | null
 }
 
+// null = todos. Guardado no navegador: vale para o Dashboard e o Kanban
+export type FiltroServicos = {
+  cidade: string | null
+  motoristaId: string | null
+}
+
+const CHAVE_FILTRO = "filtro-servicos"
+const SEM_FILTRO: FiltroServicos = { cidade: null, motoristaId: null }
+
+function lerFiltro(): FiltroServicos {
+  try {
+    return { ...SEM_FILTRO, ...JSON.parse(localStorage.getItem(CHAVE_FILTRO)!) }
+  } catch {
+    return SEM_FILTRO
+  }
+}
+
 // Serviços do dia para o Dashboard e o Kanban, atualizados por Realtime
 export function useServicosDoDia(canal: string) {
-  const [dados, setDados] = useState<ServicosDoDia | null>(null)
+  const [todos, setTodos] = useState<ServicosDoDia | null>(null)
+  const [filtro, setFiltroEstado] = useState(lerFiltro)
+
+  const setFiltro = useCallback((novo: FiltroServicos) => {
+    setFiltroEstado(novo)
+    localStorage.setItem(CHAVE_FILTRO, JSON.stringify(novo))
+  }, [])
 
   const recarregar = useCallback(() => {
-    buscar().then(setDados)
+    buscar().then(setTodos)
   }, [])
 
   useEffect(() => {
-    buscar().then(setDados)
+    buscar().then(setTodos)
     const inscricao = supabase
       .channel(canal)
       .on(
@@ -72,5 +95,36 @@ export function useServicosDoDia(canal: string) {
     }
   }, [canal, recarregar])
 
-  return { dados, recarregar }
+  // Opções do filtro: só as cidades que têm serviço agora
+  const opcoes = useMemo(() => {
+    if (!todos) return { cidades: [], motoristas: [] }
+    const cidades = new Set<string>()
+    for (const s of todos.servicos) {
+      const cidade = todos.empresas.get(s.empresa_id!)?.cidade
+      if (cidade) cidades.add(cidade)
+    }
+    return {
+      cidades: [...cidades].sort((a, b) => a.localeCompare(b, "pt-BR")),
+      motoristas: [...todos.motoristas].map(([id, m]) => ({ id, ...m })),
+    }
+  }, [todos])
+
+  const dados = useMemo<ServicosDoDia | null>(() => {
+    if (!todos) return null
+    const { cidade, motoristaId } = filtro
+    if (!cidade && !motoristaId) return todos
+    return {
+      ...todos,
+      servicos: todos.servicos.filter(
+        (s) =>
+          (!motoristaId || s.motorista_id === motoristaId) &&
+          (!cidade || todos.empresas.get(s.empresa_id!)?.cidade === cidade)
+      ),
+      motoristas: motoristaId
+        ? new Map([...todos.motoristas].filter(([id]) => id === motoristaId))
+        : todos.motoristas,
+    }
+  }, [todos, filtro])
+
+  return { dados, recarregar, filtro, setFiltro, opcoes }
 }

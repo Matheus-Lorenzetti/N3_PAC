@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
+import { FiltroServicosBarra } from "@/features/escritorio/filtro-servicos"
 import { EtiquetaRegiao } from "@/features/escritorio/regioes/etiqueta-regiao"
 import {
   useServicosDoDia,
@@ -168,7 +169,8 @@ function Lixeira({
 }
 
 export function KanbanPage() {
-  const { dados, recarregar } = useServicosDoDia("escritorio-kanban")
+  const { dados, recarregar, filtro, setFiltro, opcoes } =
+    useServicosDoDia("escritorio-kanban")
   const [arrastando, setArrastando] = useState<ServicoSituacao | null>(null)
   const [alvo, setAlvo] = useState<Situacao | null>(null)
   const [excluir, setExcluir] = useState<ServicoSituacao | null>(null)
@@ -230,7 +232,13 @@ export function KanbanPage() {
 
   return (
     <>
-      <div className="grid gap-4 lg:grid-cols-4">
+      <FiltroServicosBarra
+        filtro={filtro}
+        onMudar={setFiltro}
+        opcoes={opcoes}
+      />
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-4">
         {COLUNAS.map(({ situacao, descricao }) => {
           const cartoes = porColuna.get(situacao) ?? []
           const aceita = !!arrastando && podeSoltar(arrastando, situacao)
