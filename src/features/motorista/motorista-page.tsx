@@ -55,8 +55,27 @@ type Empresa = Tabela<"empresas">
 export type ParadaOrdenada = {
   servico: ServicoSituacao
   empresa: Empresa | undefined
-  // null = fora do mapa (empresa sem localização ou sem rota possível)
+  // false = fora do mapa (empresa sem localização ou sem rota possível)
+  noMapa: boolean
+  // null = ainda sem previsão (rota calculando ou fora do mapa)
   chegadaSeg: number | null
+}
+
+// Ordem escolhida pelo motorista: vale só no dia e fica no próprio celular
+function chaveOrdemManual(motoristaId: string) {
+  const hoje = new Date().toLocaleDateString("sv-SE", {
+    timeZone: "America/Sao_Paulo",
+  })
+  return `ordem-manual:${motoristaId}:${hoje}`
+}
+
+function lerOrdemManual(motoristaId: string): number[] | null {
+  try {
+    const texto = localStorage.getItem(chaveOrdemManual(motoristaId))
+    return texto ? (JSON.parse(texto) as number[]) : null
+  } catch {
+    return null
+  }
 }
 
 async function buscarDados() {
@@ -139,10 +158,14 @@ export function MotoristaPage() {
   const { funcionario, sair } = useAuth()
   const [iniciado, setIniciado] = useState(false)
   const [dados, setDados] = useState<Dados | null>(null)
-  const [rota, setRota] = useState<(RotaOtimizada & { chave: string }) | null>(
-    null
-  )
+  const [rota, setRota] = useState<
+    (RotaOtimizada & { chave: string; otimizada: boolean }) | null
+  >(null)
   const [erroRota, setErroRota] = useState<string | null>(null)
+  // null = segue a ordem sugerida (otimizada)
+  const [ordemManual, setOrdemManual] = useState<number[] | null>(() =>
+    funcionario ? lerOrdemManual(funcionario.id) : null
+  )
   const [alerta, setAlerta] = useState<ColetaRecebida | null>(null)
   const [ocupado, setOcupado] = useState(false)
   const [painel, setPainel] = useState<"rota" | "coletas" | null>(null)
@@ -254,12 +277,28 @@ export function MotoristaPage() {
     })
   }, [dados])
 
-  const chaveRota = paradasNoMapa
-    .map((p) => p.id)
-    .sort((a, b) => a - b)
-    .join(",")
+  // Com ordem manual, as paradas seguem a ordem do motorista; as novas vão
+  // para o fim e as concluídas ou tiradas simplesmente saem
+  const paradasEmOrdem = useMemo(() => {
+    if (!ordemManual) return paradasNoMapa
+    const lugar = new Map(ordemManual.map((id, i) => [id, i]))
+    const fim = Number.MAX_SAFE_INTEGER
+    return [...paradasNoMapa].sort(
+      (a, b) => (lugar.get(a.id) ?? fim) - (lugar.get(b.id) ?? fim)
+    )
+  }, [paradasNoMapa, ordemManual])
 
-  // Recalcula só quando muda o conjunto de paradas (aceitou, concluiu, adicionou)
+  // Sugerida: muda só com o conjunto de paradas. Manual: muda também com a ordem
+  const chaveRota = !paradasNoMapa.length
+    ? ""
+    : ordemManual
+      ? `manual:${paradasEmOrdem.map((p) => p.id).join(",")}`
+      : paradasNoMapa
+          .map((p) => p.id)
+          .sort((a, b) => a - b)
+          .join(",")
+
+  // Recalcula só quando muda a chave (aceitou, concluiu, adicionou, reordenou)
   useEffect(() => {
     if (!iniciado || !sede) return
     if (!paradasNoMapa.length) {
@@ -269,9 +308,17 @@ export function MotoristaPage() {
     }
     // Começa de onde o motorista está; termina sempre na sede
     const inicio = posicaoRef.current ?? sede
-    otimizarRota({ inicio, fim: sede, paradas: paradasNoMapa })
+    const pedido = { inicio, fim: sede, paradas: paradasEmOrdem }
+    let otimizada = !ordemManual
+    otimizarRota({ ...pedido, fixa: !!ordemManual })
+      // Sem cota de otimização (ou ORS fora): traça na ordem atual mesmo assim
+      .catch(() => {
+        if (ordemManual) throw new Error("Não foi possível traçar a rota agora")
+        otimizada = false
+        return otimizarRota({ ...pedido, fixa: true })
+      })
       .then((resultado) => {
-        setRota({ ...resultado, chave: chaveRota })
+        setRota({ ...resultado, chave: chaveRota, otimizada })
         setErroRota(null)
         gravarRota({
           ordem: resultado.ordem.map((o) => o.id),
@@ -281,7 +328,7 @@ export function MotoristaPage() {
         })
       })
       .catch((erro: Error) => setErroRota(erro.message))
-    // paradasNoMapa muda junto com chaveRota
+    // paradasEmOrdem e ordemManual mudam junto com chaveRota
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [iniciado, chaveRota, sede?.latitude, sede?.longitude])
 
@@ -292,7 +339,14 @@ export function MotoristaPage() {
     if (!dados) return []
     const emRota = dados.servicos.filter((s) => s.status === "em_rota")
     const porId = new Map(emRota.map((s) => [s.id!, s]))
-    const naRota = (rotaAtual?.ordem ?? []).flatMap(({ id, chegadaSeg }) => {
+    const chegada = new Map(
+      (rotaAtual?.ordem ?? []).map((o) => [o.id, o.chegadaSeg])
+    )
+    // Ordem da rota calculada; enquanto calcula, a do motorista (ou a do banco)
+    const ids = rotaAtual
+      ? rotaAtual.ordem.map((o) => o.id)
+      : paradasEmOrdem.map((p) => p.id)
+    const naRota = ids.flatMap((id) => {
       const servico = porId.get(id)
       porId.delete(id)
       return servico
@@ -300,7 +354,8 @@ export function MotoristaPage() {
             {
               servico,
               empresa: dados.empresas.get(servico.empresa_id!),
-              chegadaSeg,
+              noMapa: true,
+              chegadaSeg: chegada.get(id) ?? null,
             },
           ]
         : []
@@ -308,17 +363,16 @@ export function MotoristaPage() {
     const foraDoMapa = [...porId.values()].map((servico) => ({
       servico,
       empresa: dados.empresas.get(servico.empresa_id!),
+      noMapa: false,
       chegadaSeg: null,
     }))
     return [...naRota, ...foraDoMapa]
-  }, [dados, rotaAtual])
+  }, [dados, rotaAtual, paradasEmOrdem])
 
   const marcadores: ParadaNoMapa[] = useMemo(
     () =>
-      ordenadas.flatMap(({ servico, empresa, chegadaSeg }, i) =>
-        chegadaSeg !== null &&
-        empresa?.latitude != null &&
-        empresa.longitude != null
+      ordenadas.flatMap(({ servico, empresa, noMapa }, i) =>
+        noMapa && empresa?.latitude != null && empresa.longitude != null
           ? [
               {
                 id: servico.id!,
@@ -349,10 +403,38 @@ export function MotoristaPage() {
     atualizar()
   }
 
+  function definirOrdemManual(ordem: number[] | null) {
+    setOrdemManual(ordem)
+    if (!funcionario) return
+    const chave = chaveOrdemManual(funcionario.id)
+    if (ordem) localStorage.setItem(chave, JSON.stringify(ordem))
+    else localStorage.removeItem(chave)
+  }
+
+  // Troca a parada de lugar com a vizinha (só entre as que estão no mapa)
+  function mover(servicoId: number, direcao: -1 | 1) {
+    const ids = ordenadas.filter((p) => p.noMapa).map((p) => p.servico.id!)
+    const i = ids.indexOf(servicoId)
+    const j = i + direcao
+    if (i < 0 || j < 0 || j >= ids.length) return
+    ;[ids[i], ids[j]] = [ids[j], ids[i]]
+    definirOrdemManual(ids)
+  }
+
+  // Vira pendente e entra sozinha na rota de amanhã
+  function tirarDaRota(servicoId: number) {
+    mudarStatus(servicoId, "pendente", "Tirada da rota. Entra na de amanhã", {
+      label: "Desfazer",
+      onClick: () =>
+        mudarStatus(servicoId, "em_rota", "Parada de volta na rota"),
+    })
+  }
+
   async function mudarStatus(
     servicoId: number,
-    status: "em_rota" | "realizada",
-    mensagem: string
+    status: "pendente" | "em_rota" | "realizada",
+    mensagem: string,
+    acao?: { label: string; onClick: () => void }
   ) {
     setOcupado(true)
     const { error } = await supabase
@@ -364,7 +446,7 @@ export function MotoristaPage() {
       toast.error(`Não foi possível salvar: ${error.message}`)
       return false
     }
-    toast.success(mensagem)
+    toast.success(mensagem, acao && { action: acao })
     atualizar()
     return true
   }
@@ -438,6 +520,11 @@ export function MotoristaPage() {
                 maximumFractionDigits: 1,
               })}{" "}
               km · {minutos(rotaAtual.duracaoSeg)} até voltar à sede
+            </Badge>
+          )}
+          {rotaAtual && !rotaAtual.otimizada && !ordemManual && (
+            <Badge variant="outline" className="bg-background">
+              Rota sem otimizar (limite do dia atingido)
             </Badge>
           )}
           {(erroGps || erroRota) && (
@@ -607,6 +694,10 @@ export function MotoristaPage() {
         ocupado={ocupado}
         onConcluir={(id) => mudarStatus(id, "realizada", "Parada concluída")}
         onAdicionarEntrega={adicionarEntrega}
+        manual={!!ordemManual}
+        onMover={mover}
+        onTirar={tirarDaRota}
+        onUsarSugerida={() => definirOrdemManual(null)}
       />
       <PainelColetas
         aberto={painel === "coletas"}

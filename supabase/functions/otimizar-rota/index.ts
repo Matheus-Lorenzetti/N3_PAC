@@ -12,6 +12,8 @@ const CORS = {
 
 // Limite de paradas por pedido (o plano grátis do ORS aceita até 50 jobs)
 const MAXIMO_PARADAS = 50
+// O Directions aceita até 50 pontos: início + paradas + sede
+const MAXIMO_PARADAS_FIXA = 48
 
 type Ponto = { latitude: number; longitude: number }
 type Parada = Ponto & { id: number }
@@ -51,14 +53,19 @@ Deno.serve(async (pedido) => {
   const chave = Deno.env.get("ORS_API_KEY")
   if (!chave) return resposta({ erro: "ORS_API_KEY não configurada" }, 500)
 
-  let entrada: { inicio?: unknown; fim?: unknown; paradas?: unknown }
+  let entrada: {
+    inicio?: unknown
+    fim?: unknown
+    paradas?: unknown
+    fixa?: unknown
+  }
   try {
     entrada = await pedido.json()
   } catch {
     return resposta({ erro: "JSON inválido" }, 400)
   }
 
-  const { inicio, fim, paradas } = entrada
+  const { inicio, fim, paradas, fixa } = entrada
   if (
     !ehPonto(inicio) ||
     !ehPonto(fim) ||
@@ -71,6 +78,51 @@ Deno.serve(async (pedido) => {
   }
 
   const paraLonLat = (p: Ponto) => [p.longitude, p.latitude]
+
+  // Ordem escolhida pelo motorista: só traça a rota (Directions), sem otimizar.
+  // A resposta imita a do VROOM para o app ler os dois do mesmo jeito.
+  if (fixa === true) {
+    const lista = paradas as Parada[]
+    if (lista.length > MAXIMO_PARADAS_FIXA) {
+      return resposta(
+        { erro: `Ordem manual aceita até ${MAXIMO_PARADAS_FIXA} paradas` },
+        400
+      )
+    }
+    const ors = await fetch(
+      "https://api.openrouteservice.org/v2/directions/driving-car",
+      {
+        method: "POST",
+        headers: { Authorization: chave, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          coordinates: [inicio, ...lista, fim].map(paraLonLat),
+        }),
+      }
+    )
+    if (!ors.ok) {
+      return resposta({ erro: `OpenRouteService respondeu ${ors.status}` }, 502)
+    }
+    const rota = (await ors.json()).routes?.[0]
+    // Um trecho por perna: até a 1ª parada, até a 2ª, ..., até a sede
+    const trechos: { duration?: number }[] = rota?.segments ?? []
+    let chegada = 0
+    const steps = lista.map((parada, i) => {
+      chegada += trechos[i]?.duration ?? 0
+      return { type: "job", job: parada.id, arrival: chegada }
+    })
+    return resposta({
+      routes: [
+        {
+          steps,
+          distance: rota?.summary?.distance ?? 0,
+          duration: rota?.summary?.duration ?? 0,
+          geometry: rota?.geometry,
+        },
+      ],
+      unassigned: [],
+    })
+  }
+
   const ors = await fetch("https://api.openrouteservice.org/optimization", {
     method: "POST",
     headers: { Authorization: chave, "Content-Type": "application/json" },

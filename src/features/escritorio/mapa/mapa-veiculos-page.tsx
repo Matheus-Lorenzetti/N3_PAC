@@ -142,11 +142,14 @@ export function MapaVeiculosPage() {
           .filter((s) => s.motorista_id === motorista.id)
           .map((s) => [s.id!, s])
       )
-      // Paradas na ordem que o app do motorista calculou
+      // Paradas na ordem que o app do motorista calculou; as que ainda não
+      // entraram na rota gravada (ex.: cálculo falhou) aparecem no fim
       const naOrdem = (rota?.ordem ?? []).flatMap((id) => {
         const servico = porId.get(id)
+        porId.delete(id)
         return servico ? [servico] : []
       })
+      naOrdem.push(...porId.values())
       const paradasNomes = naOrdem.map((servico) => ({
         servico,
         empresa: frota.empresas.get(servico.empresa_id!),

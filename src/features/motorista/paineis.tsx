@@ -1,4 +1,11 @@
-import { CheckIcon, PlusIcon } from "lucide-react"
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  PlusIcon,
+  SparklesIcon,
+  XIcon,
+} from "lucide-react"
 import { useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
@@ -63,6 +70,10 @@ export function PainelRota({
   ocupado,
   onConcluir,
   onAdicionarEntrega,
+  manual,
+  onMover,
+  onTirar,
+  onUsarSugerida,
 }: {
   aberto: boolean
   onAbertoChange: (aberto: boolean) => void
@@ -71,9 +82,15 @@ export function PainelRota({
   ocupado: boolean
   onConcluir: (servicoId: number) => void
   onAdicionarEntrega: (empresaId: number) => void
+  // true = o motorista mudou a ordem; false = segue a ordem sugerida
+  manual: boolean
+  onMover: (servicoId: number, direcao: -1 | 1) => void
+  onTirar: (servicoId: number) => void
+  onUsarSugerida: () => void
 }) {
   const [busca, setBusca] = useState<Empresa | null>(null)
   const clientes = empresas.filter((e) => !e.eh_sede)
+  const totalNoMapa = paradas.filter((p) => p.noMapa).length
 
   return (
     <Sheet open={aberto} onOpenChange={onAbertoChange}>
@@ -81,8 +98,21 @@ export function PainelRota({
         <SheetHeader>
           <SheetTitle>Rota do dia</SheetTitle>
           <SheetDescription>
-            Ordem calculada para o menor caminho, saindo e voltando à sede.
+            {manual
+              ? "Ordem escolhida por você, saindo e voltando à sede."
+              : "Ordem sugerida para o menor caminho, saindo e voltando à sede. Use as setas para mudar."}
           </SheetDescription>
+          {manual && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="self-start"
+              onClick={onUsarSugerida}
+            >
+              <SparklesIcon data-icon="inline-start" />
+              Usar rota sugerida
+            </Button>
+          )}
         </SheetHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 pb-4">
           <Field>
@@ -134,7 +164,9 @@ export function PainelRota({
               </Button>
             </div>
             <FieldDescription>
-              A rota é recalculada sozinha a cada parada nova.
+              {manual
+                ? "Paradas novas entram no fim da sua ordem."
+                : "A rota é recalculada sozinha a cada parada nova."}
             </FieldDescription>
           </Field>
 
@@ -143,16 +175,46 @@ export function PainelRota({
               Nenhuma parada na rota ainda.
             </p>
           )}
-          {paradas.map(({ servico, empresa, chegadaSeg }, i) => (
+          {paradas.map(({ servico, empresa, noMapa }, i) => (
             <LinhaParada
               key={servico.id}
-              numero={chegadaSeg !== null ? i + 1 : undefined}
+              numero={noMapa ? i + 1 : undefined}
               titulo={empresa?.nome ?? "—"}
               detalhe={`${servico.tipo === "coleta" ? "Coleta" : "Entrega"} · ${empresa?.endereco ?? ""}`}
             >
-              {chegadaSeg === null && (
+              {noMapa ? (
+                <div className="flex flex-col">
+                  <Button
+                    size="icon-xs"
+                    variant="ghost"
+                    aria-label={`Subir ${empresa?.nome}`}
+                    disabled={i === 0}
+                    onClick={() => onMover(servico.id!, -1)}
+                  >
+                    <ChevronUpIcon />
+                  </Button>
+                  <Button
+                    size="icon-xs"
+                    variant="ghost"
+                    aria-label={`Descer ${empresa?.nome}`}
+                    disabled={i === totalNoMapa - 1}
+                    onClick={() => onMover(servico.id!, 1)}
+                  >
+                    <ChevronDownIcon />
+                  </Button>
+                </div>
+              ) : (
                 <Badge variant="destructive">Fora do mapa</Badge>
               )}
+              <Button
+                size="icon-sm"
+                variant="outline"
+                aria-label={`Tirar ${empresa?.nome} da rota`}
+                disabled={ocupado}
+                onClick={() => onTirar(servico.id!)}
+              >
+                <XIcon />
+              </Button>
               <Button
                 size="icon-sm"
                 variant="outline"
@@ -206,7 +268,7 @@ export function PainelColetas({
               <LinhaParada
                 key={coleta.id}
                 titulo={empresa?.nome ?? "—"}
-                detalhe={`Lançada às ${formatarHora(coleta.criado_em!)} · ${empresa?.endereco ?? ""}`}
+                detalhe={`${coleta.tipo === "entrega" ? "Entrega · " : ""}Lançada às ${formatarHora(coleta.criado_em!)} · ${empresa?.endereco ?? ""}`}
               >
                 <Button
                   size="sm"

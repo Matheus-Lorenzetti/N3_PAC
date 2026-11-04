@@ -43,7 +43,10 @@ const COLUNAS: { situacao: Situacao; descricao: string }[] = [
     situacao: "aguardando",
     descricao: "Lançadas hoje, o motorista ainda não aceitou",
   },
-  { situacao: "pendente", descricao: "Ficaram do dia anterior" },
+  {
+    situacao: "pendente",
+    descricao: "Ficaram do dia anterior ou o motorista tirou da rota",
+  },
   { situacao: "em_rota", descricao: "Na rota do motorista" },
   { situacao: "realizada", descricao: "Concluídas hoje" },
 ]

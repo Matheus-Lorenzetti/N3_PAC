@@ -1,5 +1,7 @@
 // OpenRouteService: otimização de rota (VROOM) com a geometria já incluída.
 // Uma chamada por recálculo, só quando muda o conjunto de paradas.
+// Com fixa = true, mantém a ordem do motorista e só traça (Directions),
+// sem gastar a cota de otimização.
 // O pedido passa pela Edge Function otimizar-rota, que guarda a chave do ORS.
 
 import { supabase } from "@/lib/supabase"
@@ -22,6 +24,7 @@ export async function otimizarRota(pedido: {
   inicio: Ponto
   fim: Ponto
   paradas: Parada[]
+  fixa?: boolean
 }): Promise<RotaOtimizada> {
   const { data: dados, error } = await supabase.functions.invoke(
     "otimizar-rota",
