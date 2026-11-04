@@ -12,7 +12,7 @@ export type Parada = Ponto & { id: number }
 
 export type RotaOtimizada = {
   // ids das paradas na ordem de visita, com a chegada prevista (s desde a saída)
-  ordem: { id: number; chegadaSeg: number }[]
+  ordem: { id: number; chegadaSeg: number | null }[]
   semRota: number[]
   distanciaM: number
   duracaoSeg: number

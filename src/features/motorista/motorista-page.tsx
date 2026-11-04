@@ -108,7 +108,7 @@ function inserirNoMelhorLugar<P extends Ponto>(
 }
 
 async function buscarDados() {
-  const [servicos, empresas, veiculo, ultima] = await Promise.all([
+  const [servicos, empresas, veiculo, ultima, rotaHoje] = await Promise.all([
     // A RLS já devolve só os serviços deste motorista
     supabase
       .from("servicos_situacao")
@@ -133,6 +133,12 @@ async function buscarDados() {
       .select("latitude, longitude")
       .gte("registrado_em", `${hojeEmBrasilia()}T00:00:00-03:00`)
       .maybeSingle(),
+    // Rota de hoje gravada no banco (pode ter vindo do escritório)
+    supabase
+      .from("rotas")
+      .select("*")
+      .eq("data", hojeEmBrasilia())
+      .maybeSingle(),
   ])
   const lista = empresas.data ?? []
   return {
@@ -144,6 +150,7 @@ async function buscarDados() {
       ultima.data?.latitude != null && ultima.data.longitude != null
         ? { latitude: ultima.data.latitude, longitude: ultima.data.longitude }
         : null,
+    rotaHoje: rotaHoje.data,
   }
 }
 
@@ -160,11 +167,14 @@ function gravarRota(rota: {
   linha: [number, number][]
   distanciaM: number
   duracaoSeg: number
+  manual: boolean
 }) {
   supabase
     .from("rotas")
     .upsert({
       ordem: rota.ordem,
+      origem: "motorista",
+      manual: rota.manual,
       linha: rota.linha,
       distancia_m: rota.distanciaM,
       duracao_s: rota.duracaoSeg,
@@ -241,6 +251,34 @@ export function MotoristaPage() {
     )
   }, [dados])
 
+  // Segue a rota que o escritório montou no rastreador, com o traçado que ele
+  // já calculou (sem gastar a cota de novo)
+  const rotaAdotada = useRef(0)
+  const adotarRota = useCallback(
+    (recebida: Tabela<"rotas">) => {
+      if (!funcionario) return
+      rotaAdotada.current = Date.parse(recebida.calculada_em)
+      const ids = recebida.ordem.map(Number)
+      const chave = chaveOrdemManual(funcionario.id)
+      if (recebida.manual) localStorage.setItem(chave, JSON.stringify(ids))
+      else localStorage.removeItem(chave)
+      setOrdemSalva(recebida.manual ? ids : null)
+      setRota({
+        ordem: ids.map((id) => ({ id, chegadaSeg: null })),
+        semRota: [],
+        distanciaM: recebida.distancia_m,
+        duracaoSeg: recebida.duracao_s,
+        linha: recebida.linha as [number, number][],
+        otimizada: !recebida.manual,
+        chave: recebida.manual
+          ? `manual:${ids.join(",")}`
+          : [...ids].sort((a, b) => a - b).join(","),
+      })
+      toast.info("O escritório atualizou a sua rota")
+    },
+    [funcionario]
+  )
+
   // Avisos do escritório em tempo real
   useEffect(() => {
     if (!iniciado || !funcionario) return
@@ -280,6 +318,23 @@ export function MotoristaPage() {
           })
         }
       )
+      // O escritório montou a rota pelo rastreador: segue a ordem dele e usa o
+      // traçado que ele já calculou (sem gastar a cota de novo)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "rotas",
+          filter: `motorista_id=eq.${funcionario.id}`,
+        },
+        ({ new: registro }) => {
+          const recebida = registro as Partial<Tabela<"rotas">>
+          if (recebida.origem !== "escritorio" || !recebida.ordem) return
+          adotarRota(recebida as Tabela<"rotas">)
+          toast.info("O escritório atualizou a sua rota")
+        }
+      )
       // Exclusão (lixeira do Kanban): o Realtime não filtra DELETE por
       // motorista e só manda o id, então recarrega se era um serviço nosso
       .on(
@@ -295,7 +350,7 @@ export function MotoristaPage() {
       pararAlerta()
       supabase.removeChannel(canal)
     }
-  }, [iniciado, funcionario, atualizar])
+  }, [iniciado, funcionario, atualizar, adotarRota])
 
   const sede: Ponto | null = useMemo(
     () =>
@@ -399,6 +454,7 @@ export function MotoristaPage() {
           linha: resultado.linha,
           distanciaM: resultado.distanciaM,
           duracaoSeg: resultado.duracaoSeg,
+          manual: !!ordemManual,
         })
       })
       .catch((erro: Error) => setErroRota(erro.message))
@@ -409,7 +465,24 @@ export function MotoristaPage() {
     if (!iniciado || !sede) return
     if (!paradasNoMapa.length) {
       // Sem paradas: limpa a rota que o escritório vê
-      gravarRota({ ordem: [], linha: [], distanciaM: 0, duracaoSeg: 0 })
+      gravarRota({
+        ordem: [],
+        linha: [],
+        distanciaM: 0,
+        duracaoSeg: 0,
+        manual: false,
+      })
+      return
+    }
+    // A rota já é desta chave (veio pronta do escritório): não refaz
+    if (rota?.chave === chaveRota) return
+    // O escritório mudou a rota com o app fechado: segue a dele
+    const doEscritorio = dados?.rotaHoje
+    if (
+      doEscritorio?.origem === "escritorio" &&
+      rotaAdotada.current !== Date.parse(doEscritorio.calculada_em)
+    ) {
+      adotarRota(doEscritorio)
       return
     }
     calcularRota()

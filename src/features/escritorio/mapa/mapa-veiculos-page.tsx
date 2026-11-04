@@ -1,5 +1,6 @@
-import { TruckIcon } from "lucide-react"
+import { GripVerticalIcon, SparklesIcon, TruckIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -17,6 +18,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 import { Separator } from "@/components/ui/separator"
+import { Spinner } from "@/components/ui/spinner"
 import {
   MapaFrota,
   type VeiculoNoMapa,
@@ -24,6 +26,7 @@ import {
 import { cn } from "@/lib/utils"
 import { rotaDaPosicao } from "@/lib/mapa"
 import { hojeEmBrasilia, type ServicoSituacao } from "@/lib/servicos"
+import { otimizarRota } from "@/lib/ors"
 import { buscarTodas } from "@/lib/paginacao"
 import { supabase, type Tabela } from "@/lib/supabase"
 
@@ -68,6 +71,14 @@ async function buscarFrota() {
 
 type Frota = Awaited<ReturnType<typeof buscarFrota>>
 
+// Move o item de uma posição para outra (arrastar e soltar)
+function mover<T>(lista: T[], de: number, para: number) {
+  const nova = [...lista]
+  const [item] = nova.splice(de, 1)
+  nova.splice(para, 0, item)
+  return nova
+}
+
 function tempoDesde(iso: string, agora: number) {
   const minutos = Math.floor((agora - new Date(iso).getTime()) / 60_000)
   if (minutos < 1) return "agora"
@@ -80,6 +91,8 @@ export function MapaVeiculosPage() {
   const [frota, setFrota] = useState<Frota | null>(null)
   const [selecionado, setSelecionado] = useState<string | null>(null)
   const [agora, setAgora] = useState(() => Date.now())
+  const [arrastando, setArrastando] = useState<number | null>(null)
+  const [salvando, setSalvando] = useState(false)
 
   const atualizar = useCallback(() => {
     buscarFrota().then(setFrota)
@@ -193,6 +206,57 @@ export function MapaVeiculosPage() {
 
   const escolhido = veiculos.find((v) => v.motoristaId === selecionado)
 
+  // O escritório monta a rota: manual = segue a ordem dada (só traça);
+  // senão, otimiza. Sai de onde o motorista está (posição de hoje) ou da sede.
+  // O app do motorista recebe pelo Realtime e passa a seguir essa rota.
+  async function definirRota(
+    veiculo: NonNullable<typeof escolhido>,
+    ids: number[],
+    manual: boolean
+  ) {
+    if (!sede || sede.latitude == null || sede.longitude == null) return
+    const porId = new Map(veiculo.paradas.map((p) => [p.id, p]))
+    const paradas = ids.flatMap((id) => porId.get(id) ?? [])
+    if (!paradas.length) return
+    const deHoje =
+      veiculo.atualizadoEm !== null &&
+      new Date(veiculo.atualizadoEm).toLocaleDateString("sv-SE", {
+        timeZone: "America/Sao_Paulo",
+      }) === hojeEmBrasilia()
+    const pontoSede = { latitude: sede.latitude, longitude: sede.longitude }
+    setSalvando(true)
+    try {
+      const resultado = await otimizarRota({
+        inicio: (deHoje && veiculo.posicao) || pontoSede,
+        fim: pontoSede,
+        paradas,
+        fixa: manual,
+      })
+      const { error } = await supabase.from("rotas").upsert({
+        motorista_id: veiculo.motoristaId,
+        data: hojeEmBrasilia(),
+        ordem: resultado.ordem.map((o) => o.id),
+        linha: resultado.linha,
+        distancia_m: resultado.distanciaM,
+        duracao_s: resultado.duracaoSeg,
+        calculada_em: new Date().toISOString(),
+        origem: "escritorio",
+        manual,
+      })
+      if (error) throw new Error(error.message)
+      toast.success(
+        manual
+          ? "Ordem salva. O app do motorista já segue essa rota"
+          : "Rota otimizada. O app do motorista já segue essa rota"
+      )
+      atualizar()
+    } catch (erro) {
+      toast.error(`Não foi possível definir a rota: ${(erro as Error).message}`)
+    } finally {
+      setSalvando(false)
+    }
+  }
+
   return (
     <div className="grid h-[calc(100svh-6rem)] gap-4 lg:grid-cols-[20rem_1fr]">
       <Card className="min-h-0">
@@ -267,16 +331,69 @@ export function MapaVeiculosPage() {
           {escolhido && (
             <>
               <Separator />
-              <span className="text-sm font-medium">
-                Rota de {escolhido.placa}
-              </span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium">
+                  Rota de {escolhido.placa}
+                </span>
+                {escolhido.paradas.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={salvando}
+                    onClick={() =>
+                      definirRota(
+                        escolhido,
+                        escolhido.paradasNomes.map((p) => p.servico.id!),
+                        false
+                      )
+                    }
+                  >
+                    {salvando ? (
+                      <Spinner data-icon="inline-start" />
+                    ) : (
+                      <SparklesIcon data-icon="inline-start" />
+                    )}
+                    Recalcular rota
+                  </Button>
+                )}
+              </div>
+              {escolhido.paradasNomes.length > 1 && (
+                <p className="text-xs text-muted-foreground">
+                  Arraste as paradas para definir a ordem.
+                </p>
+              )}
               {escolhido.paradasNomes.length === 0 && (
                 <p className="text-sm text-muted-foreground">
                   Nenhuma parada na rota agora.
                 </p>
               )}
               {escolhido.paradasNomes.map(({ servico, empresa }, i) => (
-                <div key={servico.id} className="flex items-center gap-2">
+                <div
+                  key={servico.id}
+                  draggable={!salvando}
+                  onDragStart={(evento) => {
+                    evento.dataTransfer.effectAllowed = "move"
+                    setArrastando(i)
+                  }}
+                  onDragEnd={() => setArrastando(null)}
+                  onDragOver={(evento) => {
+                    if (arrastando !== null) evento.preventDefault()
+                  }}
+                  onDrop={(evento) => {
+                    evento.preventDefault()
+                    const de = arrastando
+                    setArrastando(null)
+                    if (de === null || de === i) return
+                    const ids = escolhido.paradasNomes.map((p) => p.servico.id!)
+                    definirRota(escolhido, mover(ids, de, i), true)
+                  }}
+                  className={cn(
+                    "flex cursor-grab items-center gap-2 rounded-md p-1 active:cursor-grabbing",
+                    arrastando === i && "opacity-50",
+                    arrastando !== null && arrastando !== i && "hover:bg-muted"
+                  )}
+                >
+                  <GripVerticalIcon className="size-4 shrink-0 text-muted-foreground" />
                   <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                     {i + 1}
                   </span>
