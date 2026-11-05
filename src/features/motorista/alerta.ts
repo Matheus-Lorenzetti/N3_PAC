@@ -6,9 +6,16 @@ let audio: AudioContext | null = null
 let repeticao: number | null = null
 
 // Chamada no toque em "Iniciar": libera o som e mantém a tela ligada
+// Depois de uma atualização automática não houve toque: tenta liberar assim
+// mesmo e, se o navegador não deixar, libera no primeiro toque na tela
 export async function prepararAlertas() {
   audio ??= new AudioContext()
-  if (audio.state === "suspended") await audio.resume()
+  if (audio.state === "suspended") {
+    audio.resume().catch(() => {})
+    window.addEventListener("pointerdown", () => audio?.resume(), {
+      once: true,
+    })
+  }
   await manterTelaLigada()
 }
 

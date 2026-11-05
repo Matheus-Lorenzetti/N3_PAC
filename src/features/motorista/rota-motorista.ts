@@ -26,6 +26,11 @@ export function chaveOrdemManual(motoristaId: string) {
   return `ordem-manual:${motoristaId}:${hojeEmBrasilia()}`
 }
 
+// Marca que o motorista tocou em "Iniciar rota" hoje neste celular
+export function chaveRotaIniciada(motoristaId: string) {
+  return `rota-iniciada:${motoristaId}:${hojeEmBrasilia()}`
+}
+
 // Ordem manual salva hoje neste celular; null se não houver
 export function lerOrdemManual(motoristaId: string): number[] | null {
   try {

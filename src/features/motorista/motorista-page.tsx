@@ -40,11 +40,13 @@ import {
   NovaColetaAlerta,
   type ColetaRecebida,
 } from "@/features/motorista/nova-coleta-alerta"
+import { segurarAtualizacao } from "@/app/atualizacao-automatica"
 import { CartaoParada } from "@/features/motorista/cartao-parada"
 import { PainelColetas, PainelRota } from "@/features/motorista/paineis"
 import {
   buscarDados,
   chaveOrdemManual,
+  chaveRotaIniciada,
   DESVIO_MAXIMO_M,
   gravarRota,
   inserirNoMelhorLugar,
@@ -89,6 +91,22 @@ export function MotoristaPage() {
   useEffect(() => {
     posicaoRef.current = posicao
   }, [posicao])
+
+  // Já iniciou hoje (ex.: a página recarregou com versão nova): inicia sozinho
+  const iniciouSozinho = useRef(false)
+  useEffect(() => {
+    if (iniciouSozinho.current || !funcionario) return
+    if (!localStorage.getItem(chaveRotaIniciada(funcionario.id))) return
+    iniciouSozinho.current = true
+    iniciar()
+    // iniciar só roda uma vez, ao abrir
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [funcionario])
+
+  // Não recarrega por versão nova com o alerta de coleta na tela
+  useEffect(() => {
+    segurarAtualizacao(!!alerta || ocupado)
+  }, [alerta, ocupado])
 
   const atualizar = useCallback(() => {
     buscarDados().then(setDados)
@@ -426,6 +444,8 @@ export function MotoristaPage() {
   const noCartao = indiceEscolhida >= 0 ? indiceEscolhida : 0
 
   async function iniciar() {
+    if (funcionario)
+      localStorage.setItem(chaveRotaIniciada(funcionario.id), "1")
     await prepararAlertas()
     // Pendentes de dias anteriores entram na rota sem perguntar
     const { data, error } = await supabase.rpc("iniciar_rota")
