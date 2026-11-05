@@ -1,6 +1,7 @@
 // Edge Function: calcula a rota no OpenRouteService. Otimiza a ordem (VROOM)
 // ou, com fixa = true, só traça na ordem recebida (Directions).
 // A chave do ORS fica só no servidor (segredo ORS_API_KEY), nunca no navegador.
+// Reserva: se a cota do dia da chave acabar, tenta a ORS_API_KEY_2 (opcional).
 // Só usuários logados chamam: a função confere a sessão no Supabase Auth
 // (a chave pública sozinha não basta).
 
@@ -37,6 +38,21 @@ async function usuarioLogado(autorizacao: string | null) {
   return resposta.ok
 }
 
+// Chama o ORS com a chave principal e, se a cota dela acabou (403/429),
+// com a reserva. Devolve a última resposta
+async function chamarOrs(url: string, corpo: unknown, chaves: string[]) {
+  let ors: Response | null = null
+  for (const chave of chaves) {
+    ors = await fetch(url, {
+      method: "POST",
+      headers: { Authorization: chave, "Content-Type": "application/json" },
+      body: JSON.stringify(corpo),
+    })
+    if (ors.status !== 403 && ors.status !== 429) break
+  }
+  return ors!
+}
+
 // Resposta em JSON, já com os cabeçalhos de CORS
 function resposta(corpo: unknown, status = 200) {
   return new Response(JSON.stringify(corpo), {
@@ -52,8 +68,13 @@ Deno.serve(async (pedido) => {
     return resposta({ erro: "Faça login para calcular rotas" }, 401)
   }
 
-  const chave = Deno.env.get("ORS_API_KEY")
-  if (!chave) return resposta({ erro: "ORS_API_KEY não configurada" }, 500)
+  const chaves = [
+    Deno.env.get("ORS_API_KEY"),
+    Deno.env.get("ORS_API_KEY_2"),
+  ].filter((c): c is string => !!c)
+  if (!chaves.length) {
+    return resposta({ erro: "ORS_API_KEY não configurada" }, 500)
+  }
 
   let entrada: {
     inicio?: unknown
@@ -91,15 +112,10 @@ Deno.serve(async (pedido) => {
         400
       )
     }
-    const ors = await fetch(
+    const ors = await chamarOrs(
       "https://api.openrouteservice.org/v2/directions/driving-car",
-      {
-        method: "POST",
-        headers: { Authorization: chave, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          coordinates: [inicio, ...lista, fim].map(paraLonLat),
-        }),
-      }
+      { coordinates: [inicio, ...lista, fim].map(paraLonLat) },
+      chaves
     )
     if (!ors.ok) {
       return resposta({ erro: `OpenRouteService respondeu ${ors.status}` }, 502)
@@ -125,10 +141,9 @@ Deno.serve(async (pedido) => {
     })
   }
 
-  const ors = await fetch("https://api.openrouteservice.org/optimization", {
-    method: "POST",
-    headers: { Authorization: chave, "Content-Type": "application/json" },
-    body: JSON.stringify({
+  const ors = await chamarOrs(
+    "https://api.openrouteservice.org/optimization",
+    {
       jobs: (paradas as Parada[]).map((p) => ({
         id: p.id,
         location: paraLonLat(p),
@@ -142,8 +157,9 @@ Deno.serve(async (pedido) => {
         },
       ],
       options: { g: true },
-    }),
-  })
+    },
+    chaves
+  )
 
   if (!ors.ok) {
     return resposta({ erro: `OpenRouteService respondeu ${ors.status}` }, 502)
