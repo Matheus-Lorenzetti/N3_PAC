@@ -1,4 +1,4 @@
-import { Trash2Icon } from "lucide-react"
+import { HistoryIcon, Trash2Icon } from "lucide-react"
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
 
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
+import { HistoricoRealizados } from "@/features/escritorio/kanban/historico-realizados"
 import { FiltroServicosBarra } from "@/features/escritorio/servicos/filtro-servicos"
 import { EtiquetaRegiao } from "@/features/escritorio/regioes/etiqueta-regiao"
 import {
@@ -177,6 +178,7 @@ export function KanbanPage() {
   const [alvo, setAlvo] = useState<Situacao | null>(null)
   const [excluir, setExcluir] = useState<ServicoSituacao | null>(null)
   const [excluindo, setExcluindo] = useState(false)
+  const [historico, setHistorico] = useState(false)
 
   const porColuna = useMemo(() => {
     const grupos = new Map<Situacao, ServicoSituacao[]>(
@@ -234,11 +236,17 @@ export function KanbanPage() {
 
   return (
     <>
-      <FiltroServicosBarra
-        filtro={filtro}
-        onMudar={setFiltro}
-        opcoes={opcoes}
-      />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <FiltroServicosBarra
+          filtro={filtro}
+          onMudar={setFiltro}
+          opcoes={opcoes}
+        />
+        <Button variant="outline" onClick={() => setHistorico(true)}>
+          <HistoryIcon data-icon="inline-start" />
+          Histórico de realizados
+        </Button>
+      </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-4">
         {COLUNAS.map(({ situacao, descricao }) => {
@@ -295,6 +303,13 @@ export function KanbanPage() {
       </div>
 
       <Lixeira arrastando={arrastando} onSoltar={setExcluir} />
+
+      <HistoricoRealizados
+        aberto={historico}
+        onAbertoChange={setHistorico}
+        dados={dados}
+        filtro={filtro}
+      />
 
       <Dialog
         open={!!excluir}
