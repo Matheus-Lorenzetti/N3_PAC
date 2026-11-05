@@ -160,6 +160,11 @@ export function linkWaze(destino: {
   return `https://waze.com/ul?ll=${destino.latitude},${destino.longitude}&navigate=yes`
 }
 
+// Número só com dígitos, para o celular discar (tel:)
+export function linkTelefone(telefone: string) {
+  return `tel:${telefone.replace(/\D/g, "")}`
+}
+
 // Segundos em "12 min" (mínimo 1 min)
 export function minutos(segundos: number) {
   return `${Math.max(1, Math.round(segundos / 60))} min`

@@ -21,11 +21,10 @@ export type ParadaNoMapa = Ponto & {
   tipo: "coleta" | "entrega"
 }
 
-// Coleta = círculo, entrega = quadrado; a próxima parada fica em destaque
-export function classeParada(tipo: "coleta" | "entrega", destaque = true) {
+// Todas quadradas (coleta ou entrega aparece no cartão); a próxima fica em destaque
+export function classeParada(destaque = true) {
   return [
-    "flex items-center justify-center text-xs font-bold shadow ring-2 ring-background",
-    tipo === "coleta" ? "rounded-full" : "rounded-md",
+    "flex items-center justify-center rounded-md text-xs font-bold shadow ring-2 ring-background",
     destaque
       ? "size-8 bg-primary text-primary-foreground"
       : "size-6 bg-muted text-muted-foreground",
@@ -44,6 +43,8 @@ export function MapaRota({
   posicao,
   seguir,
   onDeixarDeSeguir,
+  escolhida,
+  onEscolher,
 }: {
   sede: Ponto
   paradas: ParadaNoMapa[]
@@ -52,16 +53,21 @@ export function MapaRota({
   // true = câmera acompanha o motorista; false = mostra a rota toda
   seguir: boolean
   onDeixarDeSeguir: () => void
+  // Parada tocada no mapa (fica em destaque no lugar da próxima)
+  escolhida: number | null
+  onEscolher: (id: number) => void
 }) {
   const container = useRef<HTMLDivElement>(null)
   const mapa = useRef<MapaLibre | null>(null)
   const marcadoresParadas = useRef<Marker[]>([])
   const marcadorPosicao = useRef<Marker | null>(null)
   const deixarDeSeguir = useRef(onDeixarDeSeguir)
+  const escolher = useRef(onEscolher)
 
   useEffect(() => {
     deixarDeSeguir.current = onDeixarDeSeguir
-  }, [onDeixarDeSeguir])
+    escolher.current = onEscolher
+  }, [onDeixarDeSeguir, onEscolher])
 
   // Cria o mapa uma vez, centrado na sede
   const { latitude, longitude } = sede
@@ -126,22 +132,26 @@ export function MapaRota({
     })
   }, [posicao, seguir])
 
-  // Marcadores numerados na ordem de visita
+  // Marcadores numerados na ordem de visita; tocar abre o cartão da empresa
   useEffect(() => {
     const instancia = mapa.current
     if (!instancia) return
+    const destaque = escolhida ?? paradas[0]?.id
     marcadoresParadas.current.forEach((m) => m.remove())
-    marcadoresParadas.current = paradas.map((parada, i) =>
-      new Marker({
-        element: elementoMarcador(
-          classeParada(parada.tipo, i === 0),
-          String(parada.numero)
-        ),
+    marcadoresParadas.current = paradas.map((parada) => {
+      const elemento = elementoMarcador(
+        `${classeParada(parada.id === destaque)} cursor-pointer`,
+        String(parada.numero)
+      )
+      elemento.addEventListener("click", (evento) => {
+        evento.stopPropagation()
+        escolher.current(parada.id)
       })
+      return new Marker({ element: elemento })
         .setLngLat([parada.longitude, parada.latitude])
         .addTo(instancia)
-    )
-  }, [paradas])
+    })
+  }, [paradas, escolhida])
 
   // Ponto azul da posição atual
   useEffect(() => {

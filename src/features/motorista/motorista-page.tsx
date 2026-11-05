@@ -1,10 +1,8 @@
 import {
-  CheckIcon,
   ListOrderedIcon,
   LogOutIcon,
   LocateFixedIcon,
   MenuIcon,
-  NavigationIcon,
   PackageIcon,
   PlayIcon,
   RouteIcon,
@@ -17,7 +15,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -43,6 +40,7 @@ import {
   NovaColetaAlerta,
   type ColetaRecebida,
 } from "@/features/motorista/nova-coleta-alerta"
+import { CartaoParada } from "@/features/motorista/cartao-parada"
 import { PainelColetas, PainelRota } from "@/features/motorista/paineis"
 import {
   buscarDados,
@@ -52,7 +50,6 @@ import {
   inserirNoMelhorLugar,
   INTERVALO_DESVIO_MS,
   lerOrdemManual,
-  linkWaze,
   minutos,
   posicaoAtual,
   type Dados,
@@ -82,6 +79,8 @@ export function MotoristaPage() {
   const [painel, setPainel] = useState<"rota" | "coletas" | null>(null)
   // Câmera acompanha o motorista; arrastar o mapa desliga
   const [seguir, setSeguir] = useState(true)
+  // Parada tocada no mapa; null = o cartão mostra a próxima
+  const [escolhida, setEscolhida] = useState<number | null>(null)
   const { posicao, erro: erroGps } = useGps(iniciado)
   const posicaoRef = useRef(posicao)
   // Quando a rota foi refeita por desvio pela última vez
@@ -422,6 +421,9 @@ export function MotoristaPage() {
     (s) => s.situacao === "aguardando"
   )
   const proxima = ordenadas[0]
+  // A escolhida some do cartão quando sai da rota (concluída ou tirada)
+  const indiceEscolhida = ordenadas.findIndex((p) => p.servico.id === escolhida)
+  const noCartao = indiceEscolhida >= 0 ? indiceEscolhida : 0
 
   async function iniciar() {
     await prepararAlertas()
@@ -533,6 +535,8 @@ export function MotoristaPage() {
           posicao={posicao}
           seguir={seguir && !!posicao}
           onDeixarDeSeguir={() => setSeguir(false)}
+          escolhida={indiceEscolhida >= 0 ? escolhida : null}
+          onEscolher={setEscolhida}
         />
       )}
 
@@ -613,55 +617,20 @@ export function MotoristaPage() {
           </Button>
         )}
         {iniciado && proxima && (
-          <Card size="sm" className="shadow-lg">
-            <CardHeader>
-              <CardDescription>
-                Próxima parada ·{" "}
-                {proxima.servico.tipo === "coleta" ? "Coleta" : "Entrega"}
-                {proxima.chegadaSeg !== null &&
-                  ` · ~${minutos(proxima.chegadaSeg)}`}
-              </CardDescription>
-              <CardTitle className="truncate">
-                {proxima.empresa?.nome ?? "—"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="truncate text-sm text-muted-foreground">
-              {proxima.empresa?.endereco} · {proxima.empresa?.bairro}
-            </CardContent>
-            <CardFooter className="flex gap-2">
-              {proxima.empresa?.latitude != null && (
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  render={
-                    <a
-                      href={linkWaze(proxima.empresa)}
-                      target="_blank"
-                      rel="noreferrer"
-                    />
-                  }
-                  nativeButton={false}
-                >
-                  <NavigationIcon data-icon="inline-start" />
-                  Navegar
-                </Button>
-              )}
-              <Button
-                className="flex-1"
-                disabled={ocupado}
-                onClick={() =>
-                  mudarStatus(
-                    proxima.servico.id!,
-                    "realizada",
-                    "Parada concluída"
-                  )
-                }
-              >
-                <CheckIcon data-icon="inline-start" />
-                Concluir
-              </Button>
-            </CardFooter>
-          </Card>
+          <CartaoParada
+            parada={ordenadas[noCartao]}
+            numero={noCartao + 1}
+            ehProxima={noCartao === 0}
+            ocupado={ocupado}
+            onConcluir={() =>
+              mudarStatus(
+                ordenadas[noCartao].servico.id!,
+                "realizada",
+                "Parada concluída"
+              )
+            }
+            onFechar={noCartao > 0 ? () => setEscolhida(null) : undefined}
+          />
         )}
         {iniciado && !proxima && (
           <Card size="sm" className="shadow-lg">
