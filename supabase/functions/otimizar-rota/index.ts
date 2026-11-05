@@ -1,4 +1,5 @@
-// Edge Function: calcula a rota otimizada no OpenRouteService (VROOM).
+// Edge Function: calcula a rota no OpenRouteService. Otimiza a ordem (VROOM)
+// ou, com fixa = true, só traça na ordem recebida (Directions).
 // A chave do ORS fica só no servidor (segredo ORS_API_KEY), nunca no navegador.
 // Só usuários logados chamam: a função confere a sessão no Supabase Auth
 // (a chave pública sozinha não basta).
@@ -36,6 +37,7 @@ async function usuarioLogado(autorizacao: string | null) {
   return resposta.ok
 }
 
+// Resposta em JSON, já com os cabeçalhos de CORS
 function resposta(corpo: unknown, status = 200) {
   return new Response(JSON.stringify(corpo), {
     status,

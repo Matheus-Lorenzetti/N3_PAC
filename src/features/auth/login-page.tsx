@@ -56,6 +56,7 @@ const loginSchema = z
 
 type LoginForm = z.infer<typeof loginSchema>
 
+// Tela de login: e-mail + senha (escritório) ou placa + nome (motorista)
 export function LoginPage() {
   const { session } = useAuth()
   const [erro, setErro] = useState<string | null>(null)

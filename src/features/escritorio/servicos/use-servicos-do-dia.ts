@@ -58,6 +58,7 @@ export type FiltroServicos = {
 const CHAVE_FILTRO = "filtro-servicos"
 const SEM_FILTRO: FiltroServicos = { cidade: null, motoristaId: null }
 
+// Filtro salvo no navegador; sem filtro se não houver ou estiver inválido
 function lerFiltro(): FiltroServicos {
   try {
     return { ...SEM_FILTRO, ...JSON.parse(localStorage.getItem(CHAVE_FILTRO)!) }

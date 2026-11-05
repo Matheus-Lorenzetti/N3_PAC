@@ -33,6 +33,7 @@ import type { Tabela } from "@/lib/supabase"
 
 type Empresa = Tabela<"empresas">
 
+// Uma parada na lista do painel da rota
 function LinhaParada({
   numero,
   titulo,
@@ -62,6 +63,7 @@ function LinhaParada({
   )
 }
 
+// Painel da rota: ordem das paradas (setas), concluir, tirar da rota e adicionar entrega
 export function PainelRota({
   aberto,
   onAbertoChange,
@@ -232,6 +234,7 @@ export function PainelRota({
   )
 }
 
+// Painel das coletas que o escritório lançou e ainda não estão na rota
 export function PainelColetas({
   aberto,
   onAbertoChange,

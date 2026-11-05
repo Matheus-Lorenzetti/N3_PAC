@@ -14,6 +14,7 @@ export type CentroRegiao = Ponto & { nome: string; cor: string }
 
 const COR_FORA_DA_AREA = "#9ca3af"
 
+// Mapa das empresas pintadas pela região e os centros de cada região
 export function MapaRegioes({
   sede,
   pontos,

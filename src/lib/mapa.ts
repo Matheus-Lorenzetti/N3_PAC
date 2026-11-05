@@ -18,6 +18,7 @@ setWorkerUrl(workerUrl)
 const ESTILO = "https://tiles.openfreemap.org/styles/liberty"
 export const COR_ROTA = "#2563eb"
 
+// Elemento HTML de um marcador do mapa
 export function elementoMarcador(classes: string, texto = "") {
   const div = document.createElement("div")
   div.className = classes
@@ -155,6 +156,7 @@ export function quandoPronto(
   else mapa.once("load", fazer)
 }
 
+// Ajusta o zoom para mostrar todos os pontos
 export function enquadrar(
   mapa: MapaLibre,
   pontos: [number, number][],

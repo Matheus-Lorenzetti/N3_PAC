@@ -9,11 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { FiltroServicos } from "@/features/escritorio/use-servicos-do-dia"
+import type { FiltroServicos } from "@/features/escritorio/servicos/use-servicos-do-dia"
 
 // "todos" no Select = sem filtro (null no estado)
 const TODOS = "todos"
 
+// Filtro por cidade e placa, o mesmo no Dashboard e no Kanban
 export function FiltroServicosBarra({
   filtro,
   onMudar,

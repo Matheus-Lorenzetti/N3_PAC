@@ -1,5 +1,6 @@
 // OpenRouteService: otimização de rota (VROOM) com a geometria já incluída.
-// Uma chamada por recálculo, só quando muda o conjunto de paradas.
+// Uma chamada por recálculo: quando muda o conjunto ou a ordem das paradas,
+// ou quando o motorista sai do caminho.
 // Com fixa = true, mantém a ordem do motorista e só traça (Directions),
 // sem gastar a cota de otimização.
 // O pedido passa pela Edge Function otimizar-rota, que guarda a chave do ORS.
@@ -20,6 +21,7 @@ export type RotaOtimizada = {
   linha: [number, number][]
 }
 
+// Pede a rota à Edge Function e devolve a ordem, a linha, a distância e o tempo
 export async function otimizarRota(pedido: {
   inicio: Ponto
   fim: Ponto

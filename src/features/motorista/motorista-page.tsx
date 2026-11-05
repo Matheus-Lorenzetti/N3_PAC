@@ -64,6 +64,7 @@ import { otimizarRota, type Ponto, type RotaOtimizada } from "@/lib/ors"
 import { distanciaKm } from "@/lib/servicos"
 import { supabase, type Tabela } from "@/lib/supabase"
 
+// App do motorista: mapa com a rota do dia, coletas em tempo real e GPS
 export function MotoristaPage() {
   const { funcionario, sair } = useAuth()
   const [iniciado, setIniciado] = useState(false)

@@ -8,10 +8,12 @@
 
 const DOMINIO_MOTORISTA = "motorista.transmas.local"
 
+// Com "@" é login do escritório
 export function ehEmail(valor: string) {
   return valor.includes("@")
 }
 
+// Maiúsculas, sem traço nem espaço
 export function normalizarPlaca(valor: string) {
   return valor.toUpperCase().replace(/[^A-Z0-9]/g, "")
 }
@@ -31,6 +33,7 @@ export function normalizarNome(nome: string) {
     .replace(/\s+/g, " ")
 }
 
+// E-mail e senha internos do motorista, derivados do nome completo
 export function credenciaisMotorista(nome: string) {
   const normalizado = normalizarNome(nome)
   return {

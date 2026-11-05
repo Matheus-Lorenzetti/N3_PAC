@@ -23,12 +23,10 @@ export type ParadaOrdenada = {
 
 // Ordem escolhida pelo motorista: vale só no dia e fica no próprio celular
 export function chaveOrdemManual(motoristaId: string) {
-  const hoje = new Date().toLocaleDateString("sv-SE", {
-    timeZone: "America/Sao_Paulo",
-  })
-  return `ordem-manual:${motoristaId}:${hoje}`
+  return `ordem-manual:${motoristaId}:${hojeEmBrasilia()}`
 }
 
+// Ordem manual salva hoje neste celular; null se não houver
 export function lerOrdemManual(motoristaId: string): number[] | null {
   try {
     const texto = localStorage.getItem(chaveOrdemManual(motoristaId))
@@ -62,6 +60,7 @@ export function inserirNoMelhorLugar<P extends Ponto>(
   ordem.splice(melhor, 0, nova)
 }
 
+// Tudo que o app do motorista precisa ao abrir: serviços, empresas, placa, última posição e rota de hoje
 export async function buscarDados() {
   const [servicos, empresas, veiculo, ultima, rotaHoje] = await Promise.all([
     // A RLS já devolve só os serviços deste motorista
@@ -140,6 +139,7 @@ export function gravarRota(rota: {
     })
 }
 
+// Uma leitura do GPS (até 5 s); null se não houver sinal ou permissão
 export function posicaoAtual(): Promise<GeolocationPosition | null> {
   return new Promise((resolver) => {
     if (!navigator.geolocation) return resolver(null)
@@ -160,6 +160,7 @@ export function linkWaze(destino: {
   return `https://waze.com/ul?ll=${destino.latitude},${destino.longitude}&navigate=yes`
 }
 
+// Segundos em "12 min" (mínimo 1 min)
 export function minutos(segundos: number) {
   return `${Math.max(1, Math.round(segundos / 60))} min`
 }

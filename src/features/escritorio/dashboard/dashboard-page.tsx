@@ -21,9 +21,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { FiltroServicosBarra } from "@/features/escritorio/filtro-servicos"
+import { FiltroServicosBarra } from "@/features/escritorio/servicos/filtro-servicos"
 import { PorRegiao } from "@/features/escritorio/dashboard/por-regiao"
-import { useServicosDoDia } from "@/features/escritorio/use-servicos-do-dia"
+import { useServicosDoDia } from "@/features/escritorio/servicos/use-servicos-do-dia"
 import {
   ehAtrasado,
   ROTULO_SITUACAO,
@@ -36,6 +36,7 @@ type Tipo = "coleta" | "entrega"
 
 const ehPendente = ehAtrasado
 
+// Quantos serviços do tipo há em cada situação
 function contar(servicos: ServicoSituacao[], tipo: Tipo) {
   const doTipo = servicos.filter((s) => s.tipo === tipo)
   return {
@@ -51,6 +52,7 @@ function formatarData(data: string) {
   return `${dia}/${mes}/${ano}`
 }
 
+// Card com um número grande do Dashboard
 function CardNumero({
   titulo,
   valor,
@@ -82,6 +84,7 @@ function CardNumero({
   )
 }
 
+// Tela Dashboard: cards do dia, atrasados, resumo por motorista e por região
 export function DashboardPage() {
   const { dados, filtro, setFiltro, opcoes } = useServicosDoDia(
     "escritorio-dashboard"

@@ -33,6 +33,7 @@ import { supabase, type Tabela } from "@/lib/supabase"
 
 type Empresa = Tabela<"empresas">
 
+// Todas as empresas, com a sede primeiro
 function buscarEmpresas() {
   return buscarTodas((de, ate) =>
     supabase
@@ -45,6 +46,7 @@ function buscarEmpresas() {
   )
 }
 
+// Tela Empresas: lista e cadastro
 export function EmpresasPage() {
   const [empresas, setEmpresas] = useState<Empresa[] | null>(null)
   const [erro, setErro] = useState<string | null>(null)

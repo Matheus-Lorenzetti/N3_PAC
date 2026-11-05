@@ -9,6 +9,7 @@ export const RAIO_ATENDIMENTO_KM = 150
 // Menor grupo aceito na sugestão automática de k
 const MINIMO_POR_GRUPO = 3
 
+// Números de regiões (k) testados na tela Regiões
 export const KS = [2, 3, 4, 5, 6, 7, 8]
 
 // Paleta categórica validada (ordem fixa, segura para daltonismo)
@@ -28,6 +29,7 @@ export function corDoTexto(cor: string) {
   return cor === "#eda100" ? "#0b0b0b" : "#ffffff"
 }
 
+// Fica no agrupamento só quem está a até 150 km da sede
 export function dentroDaArea(ponto: Ponto, sede: Ponto) {
   return distanciaKm(ponto, sede) <= RAIO_ATENDIMENTO_KM
 }

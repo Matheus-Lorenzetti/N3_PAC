@@ -16,6 +16,7 @@ export function somenteDigitos(valor: string) {
   return valor.replace(/\D/g, "")
 }
 
+// Endereço pelo CEP no ViaCEP; null se o CEP não existir
 export async function buscarCep(cep: string): Promise<EnderecoCep | null> {
   const digitos = somenteDigitos(cep)
   if (digitos.length !== 8) return null
@@ -39,6 +40,7 @@ type EnderecoGeocodificar = {
   uf: string
 }
 
+// Primeiro resultado do Nominatim no Brasil, em latitude e longitude
 async function consultarNominatim(parametros: Record<string, string>) {
   const url = new URL("https://nominatim.openstreetmap.org/search")
   url.search = new URLSearchParams({
@@ -55,6 +57,7 @@ async function consultarNominatim(parametros: Record<string, string>) {
   return { latitude: Number(primeiro.lat), longitude: Number(primeiro.lon) }
 }
 
+// Endereço → coordenadas pelo Nominatim; null se não achar
 export async function geocodificar({
   endereco,
   cidade,

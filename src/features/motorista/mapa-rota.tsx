@@ -36,6 +36,7 @@ const ZOOM_SEGUINDO = 16
 // Espaço embaixo para o cartão da próxima parada
 const MARGEM = { top: 80, left: 40, right: 40, bottom: 220 }
 
+// Mapa em tela cheia do motorista: rota, paradas, posição atual e modo seguir
 export function MapaRota({
   sede,
   paradas,

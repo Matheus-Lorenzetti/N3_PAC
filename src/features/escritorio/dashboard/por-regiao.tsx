@@ -19,7 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { EtiquetaRegiao } from "@/features/escritorio/regioes/etiqueta-regiao"
-import type { ServicosDoDia } from "@/features/escritorio/use-servicos-do-dia"
+import type { ServicosDoDia } from "@/features/escritorio/servicos/use-servicos-do-dia"
 import { ehAtrasado } from "@/lib/servicos"
 
 // Gargalo: a região concentra 40% ou mais dos atrasos (mínimo 2) ou dos
@@ -38,6 +38,7 @@ function horas(ms: number) {
   return m ? `${h} h ${m} min` : `${h} h`
 }
 
+// Indicadores por região do k-means e alerta de gargalo
 export function PorRegiao({ dados }: { dados: ServicosDoDia }) {
   const linhas = useMemo(() => {
     const grupos = new Map<

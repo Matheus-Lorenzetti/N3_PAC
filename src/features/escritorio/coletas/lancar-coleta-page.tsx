@@ -84,6 +84,7 @@ const coletaSchema = z.object({
 
 type ColetaForm = z.infer<typeof coletaSchema>
 
+// Empresas (sem a sede) e motoristas ativos com a placa, para o formulário
 async function buscarCadastros() {
   const [empresas, motoristas] = await Promise.all([
     buscarTodas((de, ate) =>
@@ -150,6 +151,7 @@ function buscarColetas() {
     .order("criado_em", { ascending: false })
 }
 
+// Tela Lançar coleta: escolhe a empresa, sugere o motorista e envia na hora para o celular dele
 export function LancarColetaPage() {
   const [empresas, setEmpresas] = useState<Empresa[]>([])
   const [motoristas, setMotoristas] = useState<Motorista[]>([])

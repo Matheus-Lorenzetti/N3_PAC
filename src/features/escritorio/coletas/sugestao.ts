@@ -6,6 +6,7 @@ import { distanciaKm } from "@/lib/servicos"
 // 2. quem está mais perto agora (GPS dos últimos 30 min)
 // 3. quem tem menos serviços abertos (divide a carga)
 
+// GPS mais antigo que isso não conta como "mais perto"
 const POSICAO_RECENTE_MS = 30 * 60_000
 
 export type MotoristaCandidato = {
@@ -26,6 +27,7 @@ export type Sugestao = {
   motivo: string
 }
 
+// Escolhe o motorista pela ordem acima e devolve o motivo; null se não houver motorista
 export function sugerirMotorista({
   empresa,
   regiaoNome,

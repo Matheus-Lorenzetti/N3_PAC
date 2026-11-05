@@ -26,6 +26,7 @@ export function hojeEmBrasilia() {
   }).format(new Date())
 }
 
+// "14:35"
 export function formatarHora(iso: string) {
   return new Date(iso).toLocaleTimeString("pt-BR", {
     hour: "2-digit",

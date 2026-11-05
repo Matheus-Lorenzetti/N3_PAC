@@ -15,6 +15,7 @@ type AuthState = {
 
 const AuthContext = React.createContext<AuthState | undefined>(undefined)
 
+// Guarda a sessão e o funcionário logado (perfil e nome) para o app inteiro
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = React.useState<Session | null>(null)
   const [funcionario, setFuncionario] = React.useState<Funcionario | null>(null)
@@ -55,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext value={value}>{children}</AuthContext>
 }
 
+// Sessão, funcionário logado e sair(); só funciona dentro do AuthProvider
 export function useAuth() {
   const context = React.use(AuthContext)
   if (!context) {

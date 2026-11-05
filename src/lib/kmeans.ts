@@ -27,6 +27,7 @@ export type ResultadoKmeans = {
 
 const KM_POR_GRAU_LAT = 110.57
 
+// Converte latitude/longitude em km num plano centrado na origem (e volta)
 function projetor(origem: Ponto) {
   const kmPorGrauLon = 111.32 * Math.cos((origem.latitude * Math.PI) / 180)
   return {
@@ -77,6 +78,7 @@ function centrosIniciais(pontos: Xy[], k: number, sorteio: () => number) {
   return centros
 }
 
+// Algoritmo de Lloyd: atribui ao centro mais próximo e move o centro para a média, até parar
 function lloyd(pontos: Xy[], centros: Xy[]) {
   const rotulos = new Array<number>(pontos.length).fill(-1)
   for (let iteracao = 0; iteracao < 100; iteracao++) {
@@ -108,6 +110,7 @@ function lloyd(pontos: Xy[], centros: Xy[]) {
   return { rotulos, centros, inercia }
 }
 
+// Coeficiente de silhueta médio (-1 a 1): quanto maior, mais separados os grupos
 function silhueta(pontos: Xy[], rotulos: number[], k: number) {
   if (k < 2) return 0
   const valores = pontos.map((p, i) => {
@@ -127,6 +130,7 @@ function silhueta(pontos: Xy[], rotulos: number[], k: number) {
   return valores.reduce((s, v) => s + v, 0) / valores.length
 }
 
+// Roda o k-means várias vezes e fica com a menor inércia
 export function kmeans(
   entrada: Ponto[],
   k: number,

@@ -31,6 +31,7 @@ import { supabase, type Tabela } from "@/lib/supabase"
 
 type Empresa = Tabela<"empresas"> & { latitude: number; longitude: number }
 
+// Empresas com localização e a data em que as regiões foram salvas
 async function buscar() {
   const [empresas, regioes] = await Promise.all([
     buscarTodas((de, ate) =>
@@ -50,6 +51,7 @@ async function buscar() {
   }
 }
 
+// Tela Regiões: roda o k-means de k = 2 a 8, mostra o cotovelo e salva as regiões
 export function RegioesPage() {
   const [dados, setDados] = useState<Awaited<ReturnType<typeof buscar>> | null>(
     null

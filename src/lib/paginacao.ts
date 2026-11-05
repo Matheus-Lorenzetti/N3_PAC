@@ -9,6 +9,7 @@ const TAMANHO_PAGINA = 1000
 
 type Pagina<T> = PromiseLike<{ data: T[] | null; error: PostgrestError | null }>
 
+// Repete a consulta de 1.000 em 1.000 linhas até acabar
 export async function buscarTodas<T>(
   pagina: (de: number, ate: number) => Pagina<T>
 ): Promise<{ data: T[] | null; error: PostgrestError | null }> {

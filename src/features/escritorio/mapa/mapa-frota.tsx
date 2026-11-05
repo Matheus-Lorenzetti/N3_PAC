@@ -20,6 +20,7 @@ export type VeiculoNoMapa = {
   paradas: ParadaNoMapa[]
 }
 
+// Mapa do escritório com a posição, a rota e as paradas de cada veículo
 export function MapaFrota({
   sede,
   veiculos,

@@ -5,6 +5,7 @@
 let audio: AudioContext | null = null
 let repeticao: number | null = null
 
+// Chamada no toque em "Iniciar": libera o som e mantém a tela ligada
 export async function prepararAlertas() {
   audio ??= new AudioContext()
   if (audio.state === "suspended") await audio.resume()
@@ -43,6 +44,7 @@ export function iniciarAlerta() {
   }, 1500)
 }
 
+// Para o som e a vibração
 export function pararAlerta() {
   if (repeticao !== null) window.clearInterval(repeticao)
   repeticao = null
@@ -52,6 +54,7 @@ export function pararAlerta() {
 // Wake Lock: a tela não apaga enquanto o app estiver aberto
 let travaTela: WakeLockSentinel | null = null
 
+// Pede ao navegador para não apagar a tela
 async function manterTelaLigada() {
   if (!("wakeLock" in navigator) || travaTela) return
   try {

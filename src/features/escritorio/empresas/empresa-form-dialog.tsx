@@ -63,6 +63,7 @@ const vazio: EmpresaForm = {
   uf: "",
 }
 
+// Converte a empresa do banco nos campos do formulário (vazio em vez de null)
 function paraFormulario(empresa: Empresa): EmpresaForm {
   return {
     nome: empresa.nome,
@@ -84,6 +85,7 @@ type Props = {
   onSalvo: () => void
 }
 
+// Janela de cadastro ou edição de empresa
 export function EmpresaFormDialog({
   aberto,
   onAbertoChange,
@@ -115,6 +117,7 @@ export function EmpresaFormDialog({
   )
 }
 
+// Campos da empresa: o CEP preenche o endereço e, ao salvar, o endereço vira coordenadas
 function Formulario({
   empresa,
   onSalvo,

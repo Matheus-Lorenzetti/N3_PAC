@@ -39,6 +39,7 @@ const CORES = ["#2563eb", "#dc2626", "#16a34a", "#9333ea", "#ea580c"]
 // Sem posição nova há mais que isso = sinal perdido
 const AO_VIVO_MS = 2 * 60_000
 
+// Motoristas, última posição, rota de hoje e paradas em rota de cada um
 async function buscarFrota() {
   const [motoristas, posicoes, rotas, servicos, empresas] = await Promise.all([
     supabase
@@ -79,6 +80,7 @@ function mover<T>(lista: T[], de: number, para: number) {
   return nova
 }
 
+// "há 5 min", "há 2 h": idade do último sinal do GPS
 function tempoDesde(iso: string, agora: number) {
   const minutos = Math.floor((agora - new Date(iso).getTime()) / 60_000)
   if (minutos < 1) return "agora"
@@ -87,6 +89,7 @@ function tempoDesde(iso: string, agora: number) {
   return horas < 24 ? `há ${horas} h` : "há mais de 1 dia"
 }
 
+// Tela Mapa: veículos ao vivo; o escritório pode recalcular ou arrastar a ordem da rota
 export function MapaVeiculosPage() {
   const [frota, setFrota] = useState<Frota | null>(null)
   const [selecionado, setSelecionado] = useState<string | null>(null)

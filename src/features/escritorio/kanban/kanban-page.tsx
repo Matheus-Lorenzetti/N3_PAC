@@ -23,12 +23,12 @@ import {
 } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
-import { FiltroServicosBarra } from "@/features/escritorio/filtro-servicos"
+import { FiltroServicosBarra } from "@/features/escritorio/servicos/filtro-servicos"
 import { EtiquetaRegiao } from "@/features/escritorio/regioes/etiqueta-regiao"
 import {
   useServicosDoDia,
   type ServicosDoDia,
-} from "@/features/escritorio/use-servicos-do-dia"
+} from "@/features/escritorio/servicos/use-servicos-do-dia"
 import {
   formatarHora,
   hojeEmBrasilia,
@@ -77,6 +77,7 @@ function motivoPendente(servico: ServicoSituacao) {
     : "Motorista não adicionou à rota"
 }
 
+// Cartão de um serviço no Kanban (pode ser arrastado)
 function Cartao({
   servico,
   dados,
@@ -168,6 +169,7 @@ function Lixeira({
   )
 }
 
+// Tela Kanban: Aguardando → Pendente → Em rota → Realizada, com arrastar e soltar
 export function KanbanPage() {
   const { dados, recarregar, filtro, setFiltro, opcoes } =
     useServicosDoDia("escritorio-kanban")
