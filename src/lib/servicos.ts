@@ -34,6 +34,15 @@ export function formatarHora(iso: string) {
   })
 }
 
+// "45 min", "2 h 10 min"
+export function formatarDuracao(ms: number) {
+  const minutos = Math.round(ms / 60_000)
+  if (minutos < 60) return `${minutos} min`
+  const h = Math.floor(minutos / 60)
+  const m = minutos % 60
+  return m ? `${h} h ${m} min` : `${h} h`
+}
+
 // Distância em linha reta (fórmula de Haversine), em km
 export function distanciaKm(
   a: { latitude: number; longitude: number },

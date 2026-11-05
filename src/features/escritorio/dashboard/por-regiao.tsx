@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table"
 import { EtiquetaRegiao } from "@/features/escritorio/regioes/etiqueta-regiao"
 import type { ServicosDoDia } from "@/features/escritorio/servicos/use-servicos-do-dia"
-import { ehAtrasado } from "@/lib/servicos"
+import { ehAtrasado, formatarDuracao } from "@/lib/servicos"
 
 // Gargalo: a região concentra 40% ou mais dos atrasos (mínimo 2) ou dos
 // serviços abertos (mínimo 4). Regra simples, fácil de conferir na tabela.
@@ -29,14 +29,6 @@ const MINIMO_ATRASOS = 2
 const MINIMO_ABERTOS = 4
 
 const SEM_REGIAO = { id: -1, nome: "Sem região", cor: "#9ca3af" }
-
-function horas(ms: number) {
-  const minutos = Math.round(ms / 60_000)
-  if (minutos < 60) return `${minutos} min`
-  const h = Math.floor(minutos / 60)
-  const m = minutos % 60
-  return m ? `${h} h ${m} min` : `${h} h`
-}
 
 // Indicadores por região do k-means e alerta de gargalo
 export function PorRegiao({ dados }: { dados: ServicosDoDia }) {
@@ -163,7 +155,7 @@ export function PorRegiao({ dados }: { dados: ServicosDoDia }) {
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {l.tempos.length
-                      ? horas(
+                      ? formatarDuracao(
                           l.tempos.reduce((s, t) => s + t, 0) / l.tempos.length
                         )
                       : "—"}

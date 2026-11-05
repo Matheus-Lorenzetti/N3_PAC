@@ -1,5 +1,6 @@
 import {
   BuildingIcon,
+  ChartColumnIcon,
   KanbanIcon,
   LayoutDashboardIcon,
   MapIcon,
@@ -16,6 +17,7 @@ import { DashboardPage } from "@/features/escritorio/dashboard/dashboard-page"
 import { MapaVeiculosPage } from "@/features/escritorio/mapa/mapa-veiculos-page"
 import { KanbanPage } from "@/features/escritorio/kanban/kanban-page"
 import { RegioesPage } from "@/features/escritorio/regioes/regioes-page"
+import { RelatoriosPage } from "@/features/escritorio/relatorios/relatorios-page"
 import { EmpresasPage } from "@/features/escritorio/empresas/empresas-page"
 import { MotoristaPage } from "@/features/motorista/motorista-page"
 
@@ -25,6 +27,7 @@ const menuEscritorio: ItemMenu[] = [
   { para: "mapa", rotulo: "Mapa", icone: MapIcon },
   { para: "lancar-coleta", rotulo: "Lançar coleta", icone: PackagePlusIcon },
   { para: "regioes", rotulo: "Regiões", icone: ShapesIcon },
+  { para: "relatorios", rotulo: "Relatórios", icone: ChartColumnIcon },
   { para: "empresas", rotulo: "Empresas", icone: BuildingIcon },
 ]
 
@@ -49,6 +52,7 @@ export const router = createBrowserRouter([
           { path: "mapa", element: <MapaVeiculosPage /> },
           { path: "lancar-coleta", element: <LancarColetaPage /> },
           { path: "regioes", element: <RegioesPage /> },
+          { path: "relatorios", element: <RelatoriosPage /> },
           { path: "empresas", element: <EmpresasPage /> },
         ],
       },
