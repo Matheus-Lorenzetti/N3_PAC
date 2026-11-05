@@ -26,7 +26,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import type { ParadaOrdenada } from "@/features/motorista/motorista-page"
+import type { ParadaOrdenada } from "@/features/motorista/rota-motorista"
 import { formatarHora, type ServicoSituacao } from "@/lib/servicos"
 import { filtrarEmpresa, LIMITE_RESULTADOS } from "@/lib/busca"
 import type { Tabela } from "@/lib/supabase"
