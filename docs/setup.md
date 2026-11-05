@@ -104,6 +104,45 @@ npm run db:stop     # desliga
 
 ---
 
+## 7. Chaves e rodar o site
+
+**Site → banco local:** copie o modelo e preencha com a URL da API e a chave *publishable* que o `npm run db:status` mostra:
+
+```powershell
+Copy-Item .env.example .env.local
+notepad .env.local
+```
+
+**Chave do OpenRouteService (cálculo de rotas):** crie uma conta grátis em https://account.heigit.org, copie a chave e coloque no `supabase/.env`:
+
+```powershell
+Copy-Item supabase/.env.example supabase/.env
+notepad supabase/.env
+npm run db:stop; npm run db:start   # reinicia para a Edge Function ler a chave
+```
+
+> Os dois arquivos ficam fora do git: cada computador tem os seus.
+
+**Abrir o site:**
+
+```powershell
+npm run dev        # http://localhost:5173
+```
+
+---
+
+## 8. Tipos do banco (opcional)
+
+O `npm run db:types` gera os tipos a partir do banco da **nuvem**. Na primeira vez, ligue a pasta ao projeto do Supabase (pede login na conta):
+
+```powershell
+npx supabase login
+npx supabase link
+npm run db:types
+```
+
+---
+
 ## ✅ Checklist rápido
 
 - [ ] `winget install ...` e reabrir o terminal
@@ -113,3 +152,5 @@ npm run db:stop     # desliga
 - [ ] Plugins Caveman e Obsidian
 - [ ] Aceitar o MCP do shadcn
 - [ ] Abrir o Docker Desktop e rodar `npm run db:start`
+- [ ] Criar o `.env.local` e o `supabase/.env` (chave do ORS)
+- [ ] `npm run dev` e abrir http://localhost:5173
