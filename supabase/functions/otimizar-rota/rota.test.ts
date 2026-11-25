@@ -68,7 +68,7 @@ const pedidoValido = { inicio: SEDE, fim: SEDE, paradas: PARADAS }
 
 // Chamadas feitas ao ORS (sem a do login)
 const chamadasOrs = (buscar: ReturnType<typeof vi.fn>) =>
-  buscar.mock.calls.filter(([url]) => String(url).includes("openrouteservice"))
+  buscar.mock.calls.filter(([url]) => String(url).includes("api.heigit.org"))
 
 describe("otimizar-rota: quem pode chamar", () => {
   it("responde ao OPTIONS do navegador com os cabeçalhos de CORS", async () => {
@@ -206,7 +206,7 @@ describe("otimizar-rota: otimização (VROOM)", () => {
     await tratarPedido(pedido(pedidoValido), ambiente)
 
     const [[url, opcoes]] = chamadasOrs(buscar)
-    expect(url).toBe("https://api.openrouteservice.org/optimization")
+    expect(url).toBe("https://api.heigit.org/vroom/v0")
     expect(JSON.parse(String(opcoes?.body))).toEqual({
       jobs: [
         { id: 10, location: [-49.09, -26.47] },
@@ -303,7 +303,7 @@ describe("otimizar-rota: ordem manual do motorista (fixa)", () => {
 
     const [[url, opcoes]] = chamadasOrs(buscar)
     expect(url).toBe(
-      "https://api.openrouteservice.org/v2/directions/driving-car"
+      "https://api.heigit.org/openrouteservice/v2/directions/driving-car"
     )
     expect(JSON.parse(String(opcoes?.body))).toEqual({
       coordinates: [
