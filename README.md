@@ -115,9 +115,10 @@ N3_PAC/
 │   ├── functions/otimizar-rota # Edge Function das rotas
 │   ├── seed.sql                # Sede e dados de teste do banco local
 │   └── config.toml             # Configuração do Supabase local
+├── scripts/                    # Resumo da cobertura dos testes
 ├── docs/setup.md               # Como configurar o ambiente do zero
 ├── .claude/skills/             # Skills do Claude Code usadas no projeto
-└── package.json                # Scripts (npm run dev, db:*)
+└── package.json                # Scripts (npm run dev, test, db:*)
 ```
 
 ---
@@ -132,6 +133,25 @@ npm run dev        # abre o site em http://localhost:5173
 ```
 
 Passo a passo completo, com as variáveis de ambiente, em [docs/setup.md](docs/setup.md).
+
+---
+
+## ✅ Testes
+
+Testes automatizados com [Vitest](https://vitest.dev) e Testing Library. Nenhum teste fala com o banco ou com a internet: o Supabase e as APIs externas são trocados por versões de mentira.
+
+```powershell
+npm test                 # roda todos os testes uma vez
+npm run test:observar    # roda de novo a cada arquivo salvo
+npm run test:cobertura   # roda e mede a cobertura (relatório em cobertura/index.html)
+```
+
+| Lado | O que é testado | Meta | Cobertura de linhas |
+| --- | --- | --- | --- |
+| Backend | Edge Function `otimizar-rota`: login, validação do pedido, otimização, ordem manual e chave reserva do ORS | 75% | 94% |
+| Frontend | Regras de negócio (atraso, sugestão de motorista, k-means, gargalo por região, busca, login por placa) e telas (Kanban, Dashboard, Relatórios, Login, proteção por perfil) | 25% | 45% |
+
+O comando `test:cobertura` falha se a cobertura ficar abaixo da meta. Os testes ficam ao lado do arquivo testado, com o final `.test.ts` ou `.test.tsx`.
 
 ---
 
