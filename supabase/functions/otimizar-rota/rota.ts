@@ -16,8 +16,11 @@ export const MAXIMO_PARADAS = 50
 // O Directions aceita até 50 pontos: início + paradas + sede
 export const MAXIMO_PARADAS_FIXA = 48
 
-const URL_OTIMIZACAO = "https://api.openrouteservice.org/optimization"
-const URL_TRACADO = "https://api.openrouteservice.org/v2/directions/driving-car"
+// Endereços da API da HeiGIT. O antigo api.openrouteservice.org foi desligado
+// em 24/11/2026; a otimização (VROOM) e o traçado passaram para api.heigit.org
+const URL_OTIMIZACAO = "https://api.heigit.org/vroom/v0"
+const URL_TRACADO =
+  "https://api.heigit.org/openrouteservice/v2/directions/driving-car"
 
 type Ponto = { latitude: number; longitude: number }
 type Parada = Ponto & { id: number }
