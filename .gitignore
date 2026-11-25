@@ -5,6 +5,9 @@ node_modules/
 dist/
 dist-ssr/
 
+# Relatório de cobertura dos testes (npm run test:cobertura)
+cobertura/
+
 # Variáveis de ambiente / chaves
 .env
 .env.*
